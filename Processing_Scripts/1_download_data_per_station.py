@@ -14,7 +14,8 @@
 
 #NOTE: Recommended to run in yearly blocks max 3 in parrallel, otherwise the event catalogs get so big that the connection with IRIS times out. Also note that it is important to check IRIS stations and pick out relevant networks otherwise programs wastes a lot of time look in single compinent or infra sound only networks. MUST make folder 'DataRF' in current working cirectory prgram will be run in - the structure will be used in all foloowing scripts
 
-# Usage is: python download_data_per_station.py '2015-01-01' '2016-01-01'
+# Usage is: python download_data_per_station.py
+# Or usage is: python download_data_per_station.py '2015-01-01' '2016-01-01', when sys.argv is used to pass start and end time as command line arguments
 ###################################################################################
 
 
