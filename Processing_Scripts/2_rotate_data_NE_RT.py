@@ -11,18 +11,12 @@
 import obspy
 from obspy import read
 from obspy.core import Stream
-from obspy.core import event
-from obspy.taup.taup import getTravelTimes
 from obspy import UTCDateTime
 import obspy.signal
 import obspy.signal.rotate
-import matplotlib.pyplot as plt
 import os.path
-import time
 import glob
 import shutil
-import numpy as np
-import scipy
 import sys,os
 
 # Find list of stations directories
