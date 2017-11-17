@@ -10,7 +10,6 @@ from obspy import read
 from obspy.core import Stream
 from obspy.core import event
 from obspy import UTCDateTime 
-import datetime
 import time
 import obspy.signal
 import obspy.signal.rotate
@@ -18,29 +17,11 @@ import os.path
 import glob
 import shutil
 import numpy as np
-import scipy #what does this do?
+import scipy
 import sys,os
 import obspy
-from obspy import read
-from obspy.core import Stream
-from obspy.core import event
 from obspy.taup.taup import getTravelTimes
-from obspy import UTCDateTime
-import obspy.signal
-import matplotlib.pyplot as plt
 import os.path
-import time
-import glob
-import shutil
-import numpy as np
-import scipy
-from obspy.io.xseed import Parser
-from obspy.clients.arclink import Client as ARCLINKClient
-from obspy.clients.fdsn import Client as IRISClient
-from subprocess import call
-import subprocess
-from obspy.taup.taup import getTravelTimes
-import sys
 from obspy.taup import TauPyModel
 model=TauPyModel(model="prem")
 
