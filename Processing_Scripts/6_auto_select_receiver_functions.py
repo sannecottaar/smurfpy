@@ -9,7 +9,7 @@
 # poor RF are moved to a sub folder and a list of automatically slected RF is produced:selected_RFs_jgf1.dat
 ##################################################################
 
-
+# import modules
 import obspy
 from obspy import read
 from obspy.core import Stream
