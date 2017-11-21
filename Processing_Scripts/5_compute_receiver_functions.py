@@ -4,7 +4,7 @@
 # requires module receiver_function.py in same folder program is run in. Adds computed RF to pre-existing PICKLE event file
 ##################################################################
 
-
+#Import Modules
 import obspy
 from obspy import read
 from obspy.core import Stream
