@@ -57,7 +57,6 @@ for stadir in stations:
             EVENT= onestation[0].stats['event']
                 
             #detrending
-            onestation.detrend('demean')
             onestation.detrend('linear')
         
             #merge gappy waveforms and overlap
