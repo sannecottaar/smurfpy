@@ -26,6 +26,7 @@ file_char_len=-51
 direc = 'DataRF/'
 flag = 'SV'
 filt= 'jgf1'
+count=0
 
 fitmin = 60 # Minimum 60 percent of radial compoment should be fit (after reconvolving the RF with the vertical component
 noisebefore = 0.3 # There should be no peaks before the main P wave which are more than 30% of the amplitude of the Pwave
@@ -70,25 +71,46 @@ for stadir in stadirs:
                         # test if there are no strong peaks before and no huge peaks after the main arrival
                         if np.max(np.abs(RF.data[0:indm-40]))<noisebefore:
                          if np.max(np.abs(RF.data[indm+40:indm+1200]))<noiseafter:
-                          if np.max(np.abs(RF.data[indm+20:-1]))>minamp:
-                            print('good station')
-                            goodrffile.write(stalist[i]+'\n') # List all RF filenames is good_RFs.dat
-                          #if file doesn't meet any of these criteria - move to thrown out folder
+                          if np.max(np.abs(RF.data[indm+200:-1]))>minamp:
+                              Ptime=seis[0].stats.traveltimes['P'] # set P arrival time
+                              Ptime=seis[0].stats['starttime']+Ptime
+                              vertical = seis.select(channel='BHZ')[0]
+                              Pref=vertical.slice(Ptime-25.,Ptime+150.) # Cut out P arrival on vertical
+                              radial = seis.select(channel='*HR')[0]
+                              SVref=radial.slice(Ptime-25.,Ptime+150.) # Cut out P arrival on radial
+
+                              # test mean energy around P arrival, vs. rest of the trace
+                              Ponly=Pref.slice(Ptime-5.,Ptime+20.)
+                              Penergy=np.sum(Ponly.data*Ponly.data)/float(len(Ponly.data))
+                              #print ('Penergy= ', Penergy)                              
+                              #Pref=Pref.slice(Ptime+20.,Ptime+90.)
+                              Tracenergy=np.sum(Pref.data*Pref.data)/float(len(Pref.data))
+                              #print ('Tracenergy= ', Tracenergy)                        
+                              Noisemeasure=Penergy/Tracenergy
+                              # test mean energy on radial component
+                              Tracenergy=np.sum(SVref.data*SVref.data)/float(len(SVref.data))
+                              Noisemeasure2=Penergy/Tracenergy
+                              # set requirements for signal-to-noise ratio
+                              if Noisemeasure > 2.5 and Noisemeasure2 >2.0 and Noisemeasure2 <100. :
+                                  print stalist[i], 'passed selection'
+                                  count=count+1
+                              
+                                  print('good station')
+                                  goodrffile.write(stalist[i]+'\n') # List all RF filenames is good_RFs.dat
+                                  #if file doesn't meet any of these criteria - move to thrown out folder
+                              else:
+                              shutil.move(stalist[i],rm_direc+stalist[i][file_char_len:])
                           else:
                             shutil.move(stalist[i],rm_direc+stalist[i][file_char_len:])
                          else:
                           shutil.move(stalist[i],rm_direc+stalist[i][file_char_len:])
                         else:
                           shutil.move(stalist[i],rm_direc+stalist[i][file_char_len:])
-
                     else:
                       shutil.move(stalist[i],rm_direc+stalist[i][file_char_len:])
-
                 else:
                   shutil.move(stalist[i],rm_direc+stalist[i][file_char_len:])
   
-
-
                  #except:
                  #  print('test failed for' + stalist[i])
 
