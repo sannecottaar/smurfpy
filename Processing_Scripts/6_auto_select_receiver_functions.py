@@ -9,23 +9,14 @@
 # poor RF are moved to a sub folder and a list of automatically slected RF is produced:selected_RFs_jgf1.dat
 ##################################################################
 
+# import modules
 
-import obspy
 from obspy import read
-from obspy.core import Stream
 from obspy.core import trace
-import matplotlib.pyplot as plt
 import os.path
-import time
 import glob
 import shutil
 import numpy as np
-from obspy import UTCDateTime
-import receiver_function as rf
-import subprocess
-import scipy
-from scipy import interpolate
-import pickle
 
 
 #negative length of file name in characters +1
