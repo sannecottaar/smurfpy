@@ -55,7 +55,10 @@ for stadir in stations:
             STATION= onestation[0].stats['station']
             NETWORK= onestation[0].stats['network']
             EVENT= onestation[0].stats['event']
-
+                
+            #detrending
+            onestation.detrend('linear')
+        
             #merge gappy waveforms and overlap
             onestation.merge()
 
