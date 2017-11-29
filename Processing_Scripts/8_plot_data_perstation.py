@@ -1,21 +1,11 @@
 #
 
-import obspy
 from obspy import read
-from obspy.core import Stream
-from obspy.core import trace
 import matplotlib.pyplot as plt
-import os.path
 import time
 import glob
-import shutil
 import numpy as np
 from obspy import UTCDateTime
-import receiver_function as rf
-import subprocess
-from obspy.taup.taup import getTravelTimes
-from obspy.taup import TauPyModel
-
 
 direc = 'DataRF'
 flag = 'SV'
