@@ -137,8 +137,9 @@ for stadir in stations:
         seisnew[0].stats['event'] = EVENT
 
         # write out in pickle format (with BAZ and DIST in name)
-        baz_str = format(BAZ, '.3f').zfill(7)
-        dist_str = format(DIST, '.3f').zfill(7)
+        baz_str = '%03d' %(BAZ)
+        dist_str = '%02d' %(DIST)
+
         ev_str = str(seisZ[0].stats.starttime)
         filename = stadir + '/' + baz_str + '_' + dist_str + \
             '_' + str(seisZ[0].stats.starttime) + '.PICKLE'
