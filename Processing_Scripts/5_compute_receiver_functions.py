@@ -190,6 +190,7 @@ for i in range(len(stalist)):  # range(cat.count()):
         # check that both components are not zero length otherwise script will
         # crash
         if len(SVref.data) == 0 or len(Pref.data) == 0:
+            os.remove(stalist[i])
             continue
 
         # Run iterative deconvolution
@@ -198,6 +199,7 @@ for i in range(len(stalist)):  # range(cat.count()):
             RF.data, fitid = rf.iterative_deconvolution(
             SVref.data, Pref.data, maxbumps=200, dt=Pref.stats['delta'], filt=filttype, fmax=filterconst, timeshift=25.)
         except:
+            os.remove(stalist[i])            
             continue
         # Normalize and switch polarity if needed
         indm = np.argmax(np.abs(RF.data[200:300]))
