@@ -117,11 +117,11 @@ for stadir in stations:
         seisnew.append(seisZ[0])
         seisnew.append(seisR)
         seisnew.append(seisT)
-        for s in seisnew:
-            print(s.stats.npts, s.stats.delta)
+        for st in seisnew:
+            print(st.stats.npts, st.stats.delta)
             # resample to 10 samples/s
-            s.resample(10)
-            print("resampled to:", s.stats.npts, s.stats.delta)
+            st.resample(10)
+            print("resampled to:", st.stats.npts, st.stats.delta)
 
         # Copy values into stats
         seisnew[0].stats['evla'] = EVLA
@@ -145,5 +145,5 @@ for stadir in stations:
             '_' + str(seisZ[0].stats.starttime) + '.PICKLE'
 
         seisnew.write(filename, 'PICKLE')
-        shutil.move(stalist[i], direc)
+        shutil.move(stalist[s1], direc)
 
