@@ -145,5 +145,5 @@ for stadir in stations:
             '_' + str(seisZ[0].stats.starttime) + '.PICKLE'
 
         seisnew.write(filename, 'PICKLE')
-        shutil.move(stalist[s1], direc)
+        shutil.move(stalist[s], direc)
 
