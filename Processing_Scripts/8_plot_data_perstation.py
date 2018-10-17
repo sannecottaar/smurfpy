@@ -44,7 +44,7 @@ for stadir in stadirs:
   
                 #Ptime=Ptime
                 plt.subplot(1,3,1)
-                vertical = seis.select(channel='BHZ')[0]
+                vertical = seis.select(channel='*HZ')[0]
                 vertical.filter('bandpass', freqmin=0.01,freqmax=.1, corners=2, zerophase=True)
                 windowed=vertical[np.where(vertical.times()>seis[0].stats.traveltimes['P']-100) and np.where(vertical.times()<seis[0].stats.traveltimes['P']+100)]
                 norm=np.max(np.abs(windowed))
@@ -57,7 +57,7 @@ for stadir in stadirs:
                 plt.xlim([-25,150])
                 plt.ylim([30,92])
                 plt.subplot(1,3,2)
-                radial = seis.select(channel='BHR')[0]
+                radial = seis.select(channel='*HR')[0]
 
                 radial.filter('bandpass', freqmin=0.01,freqmax=.1, corners=2, zerophase=True)
                 windowed=vertical[np.where(radial.times()>seis[0].stats.traveltimes['P']-100) and np.where(radial.times()<seis[0].stats.traveltimes['P']+100)]

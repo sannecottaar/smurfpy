@@ -4,6 +4,9 @@
 #              downsamples data to 10sps
 #              rotates seismograms from ZNE to ZRT orientations
 #              Renames based on BAZ and epicentral distance infomation
+#              Tracking AB changes to include HH? stations
+
+
 
 # Outputs: -python stream objects in PICKLE format with a dictionary of
 # header info for each event in a new folder leaving a copy of the un
@@ -80,23 +83,23 @@ for stadir in stations:
         onestation.trim(starttime=start_cut, endtime=end_cut)
 
         # Find if component names are differenst
-        seisZ = onestation.select(channel='BHZ')
+        seisZ = onestation.select(channel='*HZ')
         if len(seisZ) > 1:
             seisZ = seisZ.select(sampling_rate=20.0)
         if len(seisZ) > 1:
             seisZ = seisZ.select(location='10')
 
-        seisN = onestation.select(channel='BHN')
+        seisN = onestation.select(channel='*HN')
 
         if len(seisN) == 0:
-            seisN = onestation.select(channel='BH2')
+            seisN = onestation.select(channel='*H2')
         if len(seisN) > 1:
             seisN = seisN.select(sampling_rate=20.0)
         if len(seisN) > 1:
             seisN = seisN.select(location='10')
-        seisE = onestation.select(channel='BHE')
+        seisE = onestation.select(channel='*HE')
         if len(seisE) == 0:
-            seisE = onestation.select(channel='BH1')
+            seisE = onestation.select(channel='*H1')
         if len(seisE) > 1:
             seisE = seisE.select(sampling_rate=20.0)
         if len(seisE) > 1:
@@ -106,10 +109,10 @@ for stadir in stations:
         [seisRtmp, seisTtmp] = obspy.signal.rotate.rotate_ne_rt(
             seisN[0].data, seisE[0].data, BAZ)
         seisR = seisN[0].copy()
-        seisR.stats['channel'] = 'BHR'
+        seisR.stats['channel'] = '*HR'
         seisR.data = seisRtmp
         seisT = seisN[0].copy()
-        seisT.stats['channel'] = 'BHT'
+        seisT.stats['channel'] = '*HT'
         seisT.data = seisTtmp
 
         # produce new stream with Vertical Radial and Transverse
