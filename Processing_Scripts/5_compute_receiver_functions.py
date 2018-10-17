@@ -93,19 +93,19 @@ for i in range(len(stalist)):  # range(cat.count()):
     else:
 
         Ptime = seis[0].stats['starttime'] + Ptime
-        vertical = seis.select(channel='BHZ')[0]
+        vertical = seis.select(channel='*HZ')[0]
         Pref = vertical.slice(Ptime -25.,
             Ptime + 150.)  # Cut out P arrival on vertical
 
         Pref.time = Pref.times() - 25.
 
         if flag == 'SV':
-            radial = seis.select(channel='BHR')[0]
+            radial = seis.select(channel='*HR')[0]
             SVref = radial.slice(
                 Ptime - 25.,
                 Ptime + 150.)  # Cut out P arrival on radial
         if flag == 'SH':
-            transverse = seis.select(channel='BHT')[0]
+            transverse = seis.select(channel='*HT')[0]
             SVref = transverse.slice(
                 Ptime - 25.,
                 Ptime + 150.)  # Cut out P arrival on transverse, still named SVref for simplicitiy

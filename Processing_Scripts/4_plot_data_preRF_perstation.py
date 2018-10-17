@@ -34,7 +34,7 @@ for stadir in stadirs:
                 #----------------PLOT VERTICAL--------------------------------
                 # 1 of 3 subplots (grid 1 row 3 columns)
                 plt.subplot(1, 3, 1)
-                vertical = seis.select(channel='BHZ')[
+                vertical = seis.select(channel='*HZ')[
                     0]  # extract V from stream
                 vertical.filter(
                     'bandpass',
@@ -67,7 +67,7 @@ for stadir in stadirs:
                 #----------------PLOT RADIAL--------------------------------
                 # 2 of 3 subplots
                 plt.subplot(1, 3, 2)
-                radial = seis.select(channel='BHR')[0]
+                radial = seis.select(channel='*HR')[0]
 
                 radial.filter(
                     'bandpass',
@@ -104,7 +104,7 @@ for stadir in stadirs:
                 #----------------PLOT TRANSVERSE--------------------------------
                 # 3 of 3 subplots
                 plt.subplot(1, 3, 3)
-                transverse = seis.select(channel='BHT')[0]
+                transverse = seis.select(channel='*HT')[0]
                 transverse.filter(
                     'bandpass',
                     freqmin=0.01,

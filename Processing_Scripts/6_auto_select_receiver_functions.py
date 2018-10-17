@@ -80,7 +80,7 @@ for stadir in stadirs:
                                         0].stats.traveltimes[
                                             'P']  # set P arrival time
                                     Ptime = seis[0].stats['starttime'] + Ptime
-                                    vertical = seis.select(channel='BHZ')[0]
+                                    vertical = seis.select(channel='*HZ')[0]
                                     Pref = vertical.slice(
                                         Ptime -
                                         25.,

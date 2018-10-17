@@ -118,7 +118,7 @@ def download_data(start, end):
                         nw.code,
                         sta.code,
                         "*",
-                        "BH*",
+                        "*H*",
                         evtime,
                         evtime +
                         lengthoftrace)
@@ -126,12 +126,12 @@ def download_data(start, end):
                         nw.code,
                         sta.code,
                         "*",
-                        "BH*",
+                        "*H*",
                         evtime,
                         evtime + lengthoftrace,
                         attach_response=True)
                 except:
-                    print('failed',nw.code,sta.code, "*","BH*",evtime,evtime +
+                    print('failed',nw.code,sta.code, "*","*H*",evtime,evtime +
                         lengthoftrace)
                 if len(seis) > 1:
                     evtlatitude = ev.origins[0]['latitude']
