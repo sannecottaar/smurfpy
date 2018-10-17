@@ -4,6 +4,9 @@
 #              downsamples data to 10sps
 #              rotates seismograms from ZNE to ZRT orientations
 #              Renames based on BAZ and epicentral distance infomation
+#              Tracking AB changes to include HH? stations
+
+
 
 # Outputs: -python stream objects in PICKLE format with a dictionary of
 # header info for each event in a new folder leaving a copy of the un
