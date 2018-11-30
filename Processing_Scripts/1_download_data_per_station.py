@@ -75,7 +75,8 @@ def download_data(start, end):
      maxlongitude=lonmax,
      starttime=starttime,
      endtime=endtime,
-     channel='*H*')
+     channel='*H*',
+     level="channel")
     count = 0
     stacount = 0
     for nw in inventory:
@@ -111,6 +112,7 @@ def download_data(start, end):
             print(len(cat))
             for ev in cat:
                 evtime = ev.origins[0].time
+                t = UTCDateTime(evtime)
                 seis = []
                 try:
                     print(
@@ -170,6 +172,17 @@ def download_data(start, end):
                     seis[0].stats['station'] = sta.code
                     seis[0].stats['network'] = nw.code
                     seis[0].stats['event'] = ev
+                    
+                    # Append azimuth and dip to each channels stats directory   
+                    for cha in range(len(seis)):
+                        location = seis[cha].stats['location']
+                        channel = seis[cha].stats['channel']
+                        identifier = str(nw.code) + "." + str(sta.code) + "." \
+                        + str(location) + "." + str(channel)                       
+                        orientation = nw.get_orientation(str(identifier), t)
+                        seis[cha].stats['orientation'] = orientation['azimuth']
+                        seis[cha].stats['dip'] = orientation['dip']
+                        print(channel + " : " + str(seis[cha].stats['orientation']))
 
                     # Write out to file
                     filename = direc + '/' + \
