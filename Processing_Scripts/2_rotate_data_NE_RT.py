@@ -32,7 +32,7 @@ all_data = 0
 # Loop through stations
 for stadir in stations:
     print("STATION:", stadir)
-    stalist = glob.glob(stadir + '/No_Z_component/*PICKLE')
+    stalist = glob.glob(stadir + '/Originals/*PICKLE')
     # make directory for processed data
     direc = stadir + '/Processed_originals'
     direc1 = stadir + '/No_Z_component'
@@ -262,7 +262,7 @@ for stadir in stations:
                 no_z += 1
                 f.write("Station: " + str(stadir) + ", Event: " + str(s) + '\n')
                 f.write("Failed on Z component" + '\n')
-                #shutil.move(stalist[s], direc1)
+                shutil.move(stalist[s], direc1)
     
 
         else:
