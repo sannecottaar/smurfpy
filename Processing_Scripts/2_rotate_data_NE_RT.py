@@ -20,13 +20,12 @@ import os.path
 import glob
 import shutil
 import os
-import matplotlib as plt
 
 no_trace = 0
 no_z = 0
 
 # Find list of stations directories
-stations = glob.glob('../RF_Data/*Data/*')
+stations = glob.glob('../Data/*')
 
 f = open("error_file.txt", 'w')
 all_data = 0
