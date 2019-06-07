@@ -92,7 +92,7 @@ for i in range(len(stalist)):  # range(cat.count()):
         print('done with', stalist[i])
     else:
 
-        Ptime = seis[0].stats['starttime'] + Ptime
+        Ptime = seis[0].stats.event.origins[0].time + Ptime
         vertical = seis.select(channel='*HZ')[0]
         Pref = vertical.slice(Ptime -25.,
             Ptime + 150.)  # Cut out P arrival on vertical

@@ -96,7 +96,6 @@ for stadir in stadirs:
                             if np.max(np.abs(RF.data[indm + 40:indm + 1200])) < noiseafter:
                                 if np.max(np.abs(RF.data[indm + 200:-1])) > minamp:
                                     Ptime = seis[0].stats.traveltimes['P']  # set P arrival time
-#                                    Ptime = seis[0].stats['starttime'] + Ptime
                                     Ptime = seis[0].stats.event.origins[0].time + Ptime
                                     
                                     # Sanne SNR measure                                   
