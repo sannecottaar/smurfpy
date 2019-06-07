@@ -250,10 +250,9 @@ for stadir in stations:
                 baz_str = '%03d' %(BAZ)
                 dist_str = '%02d' %(DIST)
         
-                ev_str = str(seisZ[0].stats.starttime)
-                filename = stadir + '/' + baz_str + '_' + dist_str + \
-                    '_' + str(seisZ[0].stats.starttime) + '.PICKLE'
-        
+                ev_str = str(seisZ[0].stats.event.origins[0].time)
+                filename = stadir + '/' + baz_str + '_' + dist_str + '_' + ev_str + '.PICKLE'
+                
                 seisnew.write(filename, 'PICKLE')
                 shutil.move(stalist[s], direc)
                 
