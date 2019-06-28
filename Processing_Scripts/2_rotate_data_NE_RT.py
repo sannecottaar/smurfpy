@@ -20,12 +20,13 @@ import os.path
 import glob
 import shutil
 import os
+import matplotlib as plt
 
 no_trace = 0
 no_z = 0
 
 # Find list of stations directories
-stations = glob.glob('../Data/*')
+stations = glob.glob('../RF_Data/Reunion/*')
 
 f = open("error_file.txt", 'w')
 all_data = 0
@@ -37,12 +38,10 @@ for stadir in stations:
     direc = stadir + '/Processed_originals'
     direc1 = stadir + '/No_Z_component'
     direc2 = stadir + '/No_NE_component'
+    direc3 = stadir + '/Start_error'
     if not os.path.exists(direc):
         os.makedirs(direc)
-    if not os.path.exists(direc1):
-        os.makedirs(direc1)
-    if not os.path.exists(direc2):
-        os.makedirs(direc2)
+
     # Loop through events
     for s in range(len(stalist)):
         print(s,stalist[s])
@@ -66,18 +65,29 @@ for stadir in stations:
 
         # detrending
         onestation.detrend('linear')
+        
 
         # merge gappy waveforms and overlap
-        onestation.merge()
+        try:
+            onestation.merge()
+        except:
+            if not os.path.exists(direc3):
+                os.makedirs(direc3)
+            shutil.move(stalist[s], direc3)
+            continue
 
         # find streams with min/max start/end times
         start_cut = UTCDateTime(onestation[0].stats.starttime)
+        #print('Start cut: ', start_cut)
         end_cut = UTCDateTime(onestation[0].stats.endtime)
+        #print('End cut: ', end_cut)
         for s1 in onestation:
             print(s1.stats.sampling_rate)
 
             start_time_stream = UTCDateTime(s1.stats.starttime)
+            #print('Start: ', start_time_stream)
             end_time_stream = UTCDateTime(s1.stats.endtime)
+            #print('End: ', end_time_stream)
 
             print("STREAM:", s1)
             #print(start_time_stream)
@@ -96,20 +106,26 @@ for stadir in stations:
             #print(end_cut)
 
         # Cut components to the same length
-        onestation.trim(starttime=start_cut, endtime=end_cut)
+        try:
+            onestation.trim(starttime=start_cut, endtime=end_cut)
+        except:
+            if not os.path.exists(direc3):
+                os.makedirs(direc3)
+            shutil.move(stalist[s], direc3)
+            continue
         
         # Find component names
-        seisZ = onestation.select(channel='BHZ')
-        seisN = onestation.select(channel='BHN')
-        seisE = onestation.select(channel='BHE')
+        seisZ = onestation.select(channel='*HZ')
+        seisN = onestation.select(channel='*HN')
+        seisE = onestation.select(channel='*HE')
         
         N_E = True
         
         # Get data if BH1/2 rather than BHN/E
         if len(seisN) == 0 or len(seisE) == 0:
             N_E = False
-            seisN = onestation.select(channel='BH2')
-            seisE = onestation.select(channel='BH1')
+            seisN = onestation.select(channel='*H2')
+            seisE = onestation.select(channel='*H1')
         
         # Check North and East exist
         if len(seisN) >=1 and len(seisE)>=1:
@@ -142,25 +158,25 @@ for stadir in stations:
                 # Only check if N & E are both > 1
                 if N_E:
                     if len(seisZ) == 0 or len(seisN) == 0 or len(seisE) == 0:
-                        seisZ = onestation.select(channel='BHZ',location=other_loc1)
-                        seisN = onestation.select(channel='BHN',location=other_loc1)
-                        seisE = onestation.select(channel='BHE',location=other_loc1)
+                        seisZ = onestation.select(channel='*HZ',location=other_loc1)
+                        seisN = onestation.select(channel='*HN',location=other_loc1)
+                        seisE = onestation.select(channel='*HE',location=other_loc1)
                         
                     if len(seisZ) == 0 or len(seisN) == 0 or len(seisE) == 0:
-                        seisZ = onestation.select(channel='BHZ',location=other_loc2)
-                        seisN = onestation.select(channel='BHN',location=other_loc2)
-                        seisE = onestation.select(channel='BHE',location=other_loc2)
+                        seisZ = onestation.select(channel='*HZ',location=other_loc2)
+                        seisN = onestation.select(channel='*HN',location=other_loc2)
+                        seisE = onestation.select(channel='*HE',location=other_loc2)
                     
                 # Always check this in case BHE & BHN have different location    
                 if len(seisZ) == 0 or len(seisN) == 0 or len(seisE) == 0:
-                    seisZ = onestation.select(channel='BHZ',location=other_loc1)
-                    seisN = onestation.select(channel='BH2',location=other_loc1)
-                    seisE = onestation.select(channel='BH1',location=other_loc1)
+                    seisZ = onestation.select(channel='*HZ',location=other_loc1)
+                    seisN = onestation.select(channel='*H2',location=other_loc1)
+                    seisE = onestation.select(channel='*H1',location=other_loc1)
                     
                 if len(seisZ) == 0 or len(seisN) == 0 or len(seisE) == 0:
-                    seisZ = onestation.select(channel='BHZ',location=other_loc2)
-                    seisN = onestation.select(channel='BH2',location=other_loc2)
-                    seisE = onestation.select(channel='BH1',location=other_loc2)
+                    seisZ = onestation.select(channel='*HZ',location=other_loc2)
+                    seisN = onestation.select(channel='*H2',location=other_loc2)
+                    seisE = onestation.select(channel='*H1',location=other_loc2)
                     
                 
                 # Make sure components are of the same length
@@ -184,12 +200,22 @@ for stadir in stations:
                     
                     orientationN = seisN[0].stats['orientation']
                     dipN = seisN[0].stats['dip']
-            
+                    
                     orientationE = seisE[0].stats['orientation']
                     dipE = seisE[0].stats['dip']
-                
+                    
                     orientationZ = seisZ[0].stats['orientation']
                     dipZ = seisZ[0].stats['dip']
+                    
+                    if orientationN == orientationE :
+                        if not os.path.exists(direc2):
+                            os.makedirs(direc2)
+                        shutil.move(stalist[s], direc2)
+                        print('Component info error')
+                        continue
+                    
+                    if dipN != dipE:
+                        dipN -= 90
                     
                     print('Rotating to N/E')
                     [seisZtmp, seisNtmp, seisEtmp] = obspy.signal.rotate.rotate2zne(
@@ -197,10 +223,10 @@ for stadir in stations:
                         seisN[0].data, orientationN, dipN,
                         seisE[0].data, orientationE, dipE)
                     seisN = seisN[0].copy() 
-                    seisN.stats['channel'] = 'BHN'
+                    seisN.stats['channel'] = '*HN'
                     seisN.data = seisNtmp
                     seisE = seisE[0].copy()
-                    seisE.stats['channel'] = 'BHE'
+                    seisE.stats['channel'] = '*HE'
                     seisE.data = seisEtmp
                     
                 # rotate components to from North and East to Radial and Transverse
@@ -262,6 +288,8 @@ for stadir in stations:
                 no_z += 1
                 f.write("Station: " + str(stadir) + ", Event: " + str(s) + '\n')
                 f.write("Failed on Z component" + '\n')
+                if not os.path.exists(direc1):
+                    os.makedirs(direc1)
                 shutil.move(stalist[s], direc1)
     
 
@@ -270,6 +298,8 @@ for stadir in stations:
             no_trace += 1
             f.write("Station: " + str(stadir) + ", Event: " + str(s) + '\n')
             f.write("Failed on N/E component" + '\n')
+            if not os.path.exists(direc2):
+                os.makedirs(direc2)
             shutil.move(stalist[s], direc2)
 
 print(all_data)
@@ -277,4 +307,3 @@ print(no_trace)
 print(no_z)
 
 f.close()
-
