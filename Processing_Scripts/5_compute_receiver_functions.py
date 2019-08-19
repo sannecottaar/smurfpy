@@ -115,6 +115,10 @@ for i in range(len(stalist)):  # range(cat.count()):
         SVref.resample(10.)
         SVref.time = SVref.times() - 25.
         # Filter and taper data
+        # If removing instrument response in step #2, this filter is largely ineffectual
+        # If instrument response fails this BP removes low frequency content of seismogram
+        # High frequencies are mostly controlled by the gaussian filtering in RF generation
+        # Leaving the filtering 'ON' should retain more data.
         Pref.filter(
             'bandpass',
             freqmin=fmin,
