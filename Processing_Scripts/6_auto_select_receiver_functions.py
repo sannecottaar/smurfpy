@@ -97,6 +97,8 @@ for stadir in stadirs:
                                 if np.max(np.abs(RF.data[indm + 200:-1])) > minamp:
                                     Ptime = seis[0].stats.traveltimes['P']  # set P arrival time
                                     Ptime = seis[0].stats.event.origins[0].time + Ptime
+                                    fmax=seis[0].stats['maxfreq']
+                                    fmin=seis[0].stats['minfreq']
                                     
                                     # Sanne SNR measure                                   
                                     if Sanne:
@@ -104,7 +106,11 @@ for stadir in stadirs:
                                         Pref = vertical.slice(Ptime - 25., Ptime + 150.)  # Cut out P arrival on vertical
                                         radial = seis.select(channel='*HR')[0]
                                         SVref = radial.slice(Ptime - 25., Ptime + 150.)  # Cut out P arrival on radial
-    
+                                        Pref.filter('bandpass',freqmin=fmin,freqmax=fmax,corners=2,zerophase=True)
+                                        SVref.filter('bandpass',freqmin=fmin,freqmax=fmax,corners=2,zerophase=True)
+                                        Pref.taper(max_percentage=0.05, type='cosine')
+                                        SVref.taper(max_percentage=0.05, type='cosine')
+                                        
                                         # test mean energy around P arrival, vs.
                                         # rest of the trace
                                         Ponly = Pref.slice(Ptime - 5., Ptime + 20.)
@@ -141,6 +147,10 @@ for stadir in stadirs:
                                         Pref = vertical.slice(Ptime - 100., Ptime + 150.)  # Cut out P arrival on vertical
                                         radial = seis.select(channel='*HR')[0]
                                         SVref = radial.slice(Ptime - 100., Ptime + 150.)  # Cut out P arrival on radial
+                                        Pref.filter('bandpass',freqmin=fmin,freqmax=fmax,corners=2,zerophase=True)
+                                        SVref.filter('bandpass',freqmin=fmin,freqmax=fmax,corners=2,zerophase=True)
+                                        Pref.taper(max_percentage=0.05, type='cosine')
+                                        SVref.taper(max_percentage=0.05, type='cosine')
                                         
                                         # Test mean energy prior to P v.s. After P. on vertical
                                         Pprior = Pref.slice(Ptime - 65., Ptime - 5.) # Select 1 min of data with safety gap
@@ -185,6 +195,8 @@ for stadir in stadirs:
                                     if Gao:
                                         vertical = seis.select(channel='*HZ')[0]
                                         Pref = vertical.slice(Ptime - 100., Ptime + 150.)  # Cut out P arrival on vertical
+                                        Pref.filter('bandpass',freqmin=fmin,freqmax=fmax,corners=2,zerophase=True)
+                                        Pref.taper(max_percentage=0.05, type='cosine')
                                         
                                         #Find max of Vertical trace around Ptime
                                         Ppeak = Pref.slice(Ptime - 8., Ptime + 17.) # Select max amp predicted time
