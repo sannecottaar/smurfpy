@@ -255,6 +255,8 @@ for stadir in stations:
                 for st in seisnew:
                     print(st.stats.npts, st.stats.delta)
                 # resample to 10 samples/s
+                    while len(st)%10 != 0:
+                        st.data = st.data[:-1]
                     st.resample(10)
                     print("resampled to:", st.stats.npts, st.stats.delta)
         
