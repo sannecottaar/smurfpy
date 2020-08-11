@@ -13,39 +13,35 @@
 # Outputs: -python stream objects in PICKLE format with a dictionary of
 # header info for each event
 
-# NOTE: Recommended to run in yearly blocks max 3 in parrallel, otherwise
-# the event catalogs get so big that the connection with IRIS times out.
+# NOTE: Recommended to run in yearly blocks max 3 in parallel, otherwise
+# the event catalogues get so big that the connection with IRIS times out.
 # Also note that it is important to check IRIS stations and pick out
-# relevant networks otherwise programs wastes a lot of time look in single
-# compinent or infra sound only networks. MUST make folder 'DataRF' in
-# current working cirectory prgram will be run in - the structure will be
-# used in all foloowing scripts
+# relevant networks otherwise program wastes a lot of time look in single
+# component or infra sound only networks. MUST make folder 'DataRF' in
+# current working directory program will be run in - the structure will be
+# used in all following scripts
 
 
 # Usage is: python download_data_per_station.py
-# Or usage is: python download_data_per_station.py '2015-01-01' '2016-01-01', when sys.argv is used to pass start and end time as command line arguments
-#
-
 
 import obspy
 from obspy.clients.fdsn import Client as IRISClient
 from obspy import UTCDateTime
-import matplotlib.pyplot as plt
 import os.path
-import time
 import obspy.geodetics.base
 import numpy as np
 import obspy.geodetics
-import sys
 
 
 def download_data(start, end):
-    # load IRIS client
+    # Load IRIS client. If using another client (e.g. RESIF, GEOFON...) edit dataclient 
+    # accordingly
     irisclient = IRISClient("IRIS")
-
-    # Station paramaters
-    lonmin = - \
-        175  # longitude and latitude bounds for stations (currently set  to Samoa)
+    dataclient = IRISClient("IRIS")
+    
+    # Station parameters
+    # longitude and latitude bounds for stations (currently set  to Samoa)
+    lonmin = - 175  
     lonmax = -165
     latmin = -15
     latmax = -10
@@ -54,14 +50,14 @@ def download_data(start, end):
     starttime = UTCDateTime(start)
     endtime = UTCDateTime(end)
 
-    # event parameters
+    # Event parameters
     radmin = 30  # Minimum radius for teleseismic earthquakes
     radmax = 90  # Maximum radius (further distances interact with the core-mantle boundary
     minmag = 5.5  # Minumum magnitude of quake
     maxmag = 8.0  # Maximum magnitude of quake
     lengthoftrace = 30. * 60.  # 30 min
 
-    # define a filter band to prevent amplifying noise during the deconvolution
+    # Define a filter band to prevent amplifying noise during the deconvolution
     # not being used, as responses are not being removed
     fl1 = 0.005
     fl2 = 0.01
@@ -120,21 +116,41 @@ def download_data(start, end):
                         nw.code,
                         sta.code,
                         "*",
-                        "*H*",
+                        "BH*",
                         evtime,
                         evtime +
                         lengthoftrace)
-                    seis = irisclient.get_waveforms(
+                    seis = dataclient.get_waveforms(
                         nw.code,
                         sta.code,
                         "*",
-                        "*H*",
+                        "BH*",
                         evtime,
                         evtime + lengthoftrace,
                         attach_response=True)
                 except:
-                    print('failed',nw.code,sta.code, "*","*H*",evtime,evtime +
-                        lengthoftrace)
+                    try:
+                        print(
+                            'Attempting',
+                            nw.code,
+                            sta.code,
+                            "*",
+                            "HH*",
+                            evtime,
+                            evtime +
+                            lengthoftrace)
+                        seis = dataclient.get_waveforms(
+                            nw.code,
+                            sta.code,
+                            "*",
+                            "HH*",
+                            evtime,
+                            evtime + lengthoftrace,
+                            attach_response=True)
+                    except:
+                        print('failed',nw.code,sta.code, "*","*H*",evtime,evtime +
+                            lengthoftrace)
+                
                 if len(seis) > 1:
                     evtlatitude = ev.origins[0]['latitude']
                     evtlongitude = ev.origins[0]['longitude']
@@ -145,12 +161,12 @@ def download_data(start, end):
                         print('failed to get true depth')
                         evtdepth = 30.  # This is a bit of a hack, might need better solution
 
-                    # compute distances azimuth and backazimuth
+                    # Compute distances azimuth and backazimuth
                     distm, az, baz = obspy.geodetics.base.gps2dist_azimuth(
                         evtlatitude, evtlongitude, sta.latitude, sta.longitude)
                     distdg = distm / (6371.e3 * np.pi / 180.)
 
-                    # remove station instrument response. + Output seismograms
+                    # Remove station instrument response. + Output seismograms
                     # in displacement and filter with corner frequences fl2,
                     # fl3
                     try:
@@ -182,7 +198,6 @@ def download_data(start, end):
                         orientation = nw.get_orientation(str(identifier), t)
                         seis[cha].stats['orientation'] = orientation['azimuth']
                         seis[cha].stats['dip'] = orientation['dip']
-                        print(channel + " : " + str(seis[cha].stats['orientation']))
 
                     # Write out to file
                     filename = direc + '/' + \
@@ -192,7 +207,7 @@ def download_data(start, end):
                     print(count)
                     seis.write(filename, format='PICKLE')
 
-    print(starttime,endtime,'Seismograms found for ',str(count), ' stations')
+    print(starttime,endtime,str(count),'seismograms found for',str(stacount),'stations')
 
 
 download_data('1992-01-01', '2018-01-01')
