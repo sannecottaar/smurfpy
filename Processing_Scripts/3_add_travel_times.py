@@ -1,27 +1,12 @@
 # TRAVEL TIME PREDICTION SCRIPT FOR RF ANALYSIS#################
 # This script computes predicted travel times for user defined phases based on TauP
-# predicted times are added to the events header information
+# Predicted times are added to the events header information
 
-# Example: python3 3_add_travel_times P S P660s P410s#####DATA PROCESSING
+# Example: python3 3_add_travel_times P S P660s P410s
 
-
-import obspy
 from obspy import read
-from obspy.core import Stream
-from obspy.core import event
-from obspy import UTCDateTime
-import time
-import obspy.signal
-import obspy.signal.rotate
-import os.path
 import glob
-import shutil
-import numpy as np
-import scipy
 import sys
-import os
-import obspy
-import os.path
 from obspy.taup import TauPyModel
 
 # Loads PREM model
@@ -39,11 +24,7 @@ count = 0
 for stadir in stations:
         print("STATION:", stadir)
         stalist = glob.glob(stadir + '/*PICKLE')
-        # make directory for processed data
-        direc = stadir + '/Travel_time_added'
 
-        if not os.path.exists(direc):
-                os.makedirs(direc)
         # Loop through events
         for s, sta in enumerate(stalist):
                     print(s)
@@ -51,13 +32,12 @@ for stadir in stations:
 
                     if not hasattr(seis[0].stats, 'traveltimes'):
                             seis[0].stats.traveltimes = dict()
-                            # print('making dict')
                             # Loop through phases and call TauP_time to get
                             # traveltime
                     for ph in range(len(phase)):
 
                         if not phase[ph] in seis[0].stats.traveltimes:
-                                # extract only first time value and if value
+                                # Extract only first time value and if value
                                 # does not exists ttime=None
                                 try:
                                         evdep_km = seis[0].stats['evdp']
@@ -66,7 +46,7 @@ for stadir in stations:
                                             source_depth_in_km=evdep_km,
                                             distance_in_degree=dist_deg,
                                             phase_list=[phase[ph]])
- 
+
                                         ttime = arrivals[0].time
                                         print(phase[ph], ttime)
                                 except:
