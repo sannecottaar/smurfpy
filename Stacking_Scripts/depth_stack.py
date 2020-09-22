@@ -35,7 +35,7 @@ params = {'legend.fontsize': 'x-large',
 pylab.rcParams.update(params)
 
 #Set some values
-direcs=glob.glob('../Data/*/*')
+direcs=glob.glob('../Data/*')
 filt = 'jgf1' # RF type to use
 conversion = 'prem' # Converstion to use
 
