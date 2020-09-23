@@ -2,6 +2,10 @@
 Depth_Slowness_Stack_Fig.py
 
 Plot a depth stack and corresponding slowness stack on the same figure.
+Automatically picks peaks based on depth ranges defined below line 77.
+
+Requires previous running of depth_stack.py and slowness_stack.py
+Edit loc_list, filts, num_rfs below (lines 31, 34 & 35).
 '''
 
 #Import all the relevant modules
