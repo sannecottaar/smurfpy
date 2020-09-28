@@ -55,8 +55,8 @@ stadirs = sorted(glob.glob(direc + '/*'))
 
 for stadir in stadirs:
     # This is where selected data will be listed.
-    goodrffile = open(stadir + '/selected_RFs_jgf1.dat', 'w')
-    SNRrffile = open(stadir + '/SNR_selected_RFs_jgf1.dat', 'w')
+    goodrffile = open(stadir + '/selected_RFs_' + filt + '.dat', 'w')
+    SNRrffile = open(stadir + '/SNR_selected_RFs_' + filt + '.dat', 'w')
 
     stalist = sorted(glob.glob(stadir + '/*.PICKLE'))
 
