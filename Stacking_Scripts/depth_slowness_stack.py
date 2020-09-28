@@ -2,10 +2,10 @@
 Depth_Slowness_Stack_Fig.py
 
 Plot a depth stack and corresponding slowness stack on the same figure.
-Automatically picks peaks based on depth ranges defined below line 77.
+Automatically picks peaks based on depth ranges defined below line 83.
 
 Requires previous running of depth_stack.py and slowness_stack.py
-Edit loc_list, filts, num_rfs below (lines 31, 34 & 35).
+Edit loc_list, filts, num_rfs, conversion below (lines 31, 34, 35 & 39).
 '''
 
 #Import all the relevant modules
@@ -36,9 +36,16 @@ num_rfs = [316,310,308,308,305,302]
 
 #Set some values
 direc='../'
+conversion='prem'
 
 #Set place to save output files (plot and pickle of stack)
-savepath=direc+'Final_Figures/prem/'
+savedir=direc+'Final_Figures/'
+if not os.path.exists(savedir):
+    os.makedirs(savedir)
+savepath=savedir+conversion
+if not os.path.exists(savepath):
+    os.makedirs(savepath)
+ 
 s410 = []
 s660 = []
 sX = []
@@ -48,7 +55,7 @@ for num in range(len(num_rfs)):
 
     fig = plt.figure(figsize=(24, 10))
     gs = gridspec.GridSpec(1, 2, width_ratios=[1, 4])
-    stack1=pickle.load(open(direc+'Depth_Stacks/prem/Depth_Stack_'+str(filts[num])+'_prem_'+str(num_rfs[num])+'RFs'+'.PICKLE','rb'))
+    stack1=pickle.load(open(direc+'Depth_Stacks/'+conversion+'/Depth_Stack_'+str(filts[num])+'_'+conversion+'_'+str(num_rfs[num])+'RFs'+'.PICKLE','rb'))
 
     #Extract common values
     depth=stack1['depth']
@@ -153,7 +160,7 @@ for num in range(len(num_rfs)):
 
     #--------------Slowness Stack
 
-    stack2=pickle.load(open(direc+'Slowness_Stacks/prem/Slowness_'+str(filts[num])+'_'+str(num_rfs[num])+'RFs'+'.PICKLE','rb'))
+    stack2=pickle.load(open(direc+'Slowness_Stacks/Slowness_'+str(filts[num])+'_'+str(num_rfs[num])+'RFs'+'.PICKLE','rb'))
 
     STACK2=stack2['STACK_nonnorm']
 
