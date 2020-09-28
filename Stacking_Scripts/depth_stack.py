@@ -42,7 +42,13 @@ conversion = 'prem' # Converstion to use
 norm_depth = 150 # depth beyond which to normalize
 norm_fact = 0.2 # Normalization factor
 
-savepath='../Depth_Stacks/prem'
+#Make directories for outputs
+savedir='../Depth_Stacks/'
+if not os.path.exists(savedir):
+    os.makedirs(savedir)
+savepath=savedir+conversion
+if not os.path.exists(savepath):
+    os.makedirs(savepath)
 
 #Define constraints
 dp = 410
