@@ -45,7 +45,11 @@ lon4 = lon1
 box = Polygon([(lat1,lon1),(lat2,lon2),(lat3,lon3),(lat4,lon4)])
 #Set some values
 filts = "jgf1"
-savepath='../Slowness_Stacks/prem'
+
+#Make directory for outputs
+savepath='../Slowness_Stacks'
+if not os.path.exists(savedir):
+    os.makedirs(savedir)
 
 #-------------------------------Loop through events---------------------------------------
 
