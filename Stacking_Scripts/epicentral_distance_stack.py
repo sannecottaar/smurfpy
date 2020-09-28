@@ -22,12 +22,10 @@ The script will ask for various inputs:
 from obspy import read
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import os.path
-import time
 import glob
-import shutil
 import numpy as np
-
+from shapely.geometry import Point, Polygon
+from matplotlib import gridspec
 
 file_char_len = -51
 #----------------------------------------User Interface-------------------
@@ -43,10 +41,16 @@ plot_histogram = True  # plot histogram of data covarage
 depth = 410
 
 # Lat and Lon constraints, piercepoints within this box will be accepted 
-latmin = -25
-latmax = 0
-lonmin = -178
-lonmax = -160
+lat1 = -25
+lon1 = -178
+lat2 = lat1
+lon2 = -160
+lat3 = 0
+lon3 = lon2
+lat4 = lat3
+lon4 = lon1
+
+box = Polygon([(lat1,lon1),(lat2,lon2),(lat3,lon3),(lat4,lon4)])
 
 # Plotting Travel Time Curves
 plot_travel_time_curves = True
@@ -68,6 +72,9 @@ STACK = np.zeros([1751, epi_steps-1])
 # Set up counter to see how many RFs are added to each bin
 counter = np.zeros([epi_steps-1])
 
+savepath='../Epicentral_Distance_Stack/'
+if not os.path.exists(savepath):
+    os.makedirs(savepath)
 
 #----------------------------------------Loop through the RF data---------
 
@@ -84,7 +91,12 @@ stadirs = glob.glob(direc + '/*')
 # Loop through stations
 for stadir in stadirs:
 
-    stalist = glob.glob(stadir+'/*.PICKLE')
+    stalist = []
+    if os.path.isfile(direc + '/selected_RFs_' + filt + '.dat'):
+        with open(direc + '/selected_RFs_' + filt + '.dat') as a:
+            starfs = a.read().splitlines()
+            for line in starfs:
+                stalist.append(line)
 
     # Loop through events
     for i in range(len(stalist)):
@@ -99,17 +111,12 @@ for stadir in stadirs:
         # Extract the pierce points
         trace_pierce = seis[0].stats['piercepoints'][
             'P'+str(depth)+'s'][str(depth)]
-        # print (trace_pierce)
-
-        # Define lat and lon of event pierce points
-        latpp = float(trace_pierce[1])
-        lonpp = float(trace_pierce[2])
-
-        print(latpp, lonpp)
+        
+        #Make Shapely points
+        point = Point(float(trace_pierce[1]), float(trace_pierce[2]))
 
         # Check whether event pierce points located within bounds of regions
-        if (latmin <= latpp <= latmax) and (lonmin <= lonpp <= lonmax):
-            # print ('yes')
+        if box.contains(point):
             count_yes = count_yes + 1
 
             # Extract various bits of info
@@ -123,24 +130,17 @@ for stadir in stadirs:
             # relates to
             rounded_epi_dist_loc = (np.floor((epi_dist-30)/step))
 
-            # Check it has found correct bin
-            # print (epi_dist, "index",rounded_epi_dist_loc,
-            # epi_range[rounded_epi_dist_loc])
-
             # Add every RF amplitude (vector) to the correct column (bin) in
             # the STACK matrix
             if len(RF_amp) == 1751:
                 try:
-
                     STACK[:, rounded_epi_dist_loc] = STACK[:, rounded_epi_dist_loc]+RF_amp
                 except:
                     print('something wrong')
                     countwrong = countwrong+1
             else:
-                # shutil.move(stalist[i],rm_direc+stalist[i][file_char_len:])
                 print('not the right length!')
 
-                # STACK[:-1,rounded_epi_dist_loc]=STACK[:-1,rounded_epi_dist_loc]+RF_amp
             # Add 1 to the count of this bin to keep track of how many RFs it
             # contains
             try:
@@ -149,7 +149,6 @@ for stadir in stadirs:
                 print('here as well')
 
         else:
-            # print ('no')
             count_no = count_no + 1
 
 # Print counters
@@ -198,21 +197,24 @@ if smoothing:
 
     # Plot STACK
     plt.figure(figsize=(12, 8))
+    gs = gridspec.GridSpec(2, 1, height_ratios=[1, 3])
     # Set up first subplot
-    ax1 = plt.subplot2grid((3, 1), (1, 1))
+    ax1 = plt.subplot(gs[1])
 
     # Plotting command (x axis, y axis, matrix of values, colourmap, min and
     # max values)
     plt.pcolor(epi_range, time, STACK_NEW, cmap='seismic', vmin=-1, vmax=1)
 
     # Axes labels
-    plt.ylabel('Time (seconds)')
-    plt.xlabel('Epicentral Distance (degrees)')
+    plt.ylabel('Time (seconds)', fontsize=24)
+    plt.xlabel('Epicentral Distance (degrees)', fontsize=24)
 
     # Axes limits
     plt.gca().set_xlim([30, 90])
     plt.gca().set_ylim([0, 150])
     plt.gca().invert_yaxis()
+    plt.xticks(fontsize=20)
+    plt.yticks(np.arange(0,150,30), fontsize=20)
 
 # No smoothing process
 else:
@@ -223,10 +225,12 @@ else:
     STACK[:,:] = STACK[:,:]/NORMALIZATION  
     ax1 = plt.subplot2grid((3, 1), (1, 1))
     plt.pcolor(epi_range, time, STACK, cmap='seismic', vmin=-1, vmax=1)
-    plt.ylabel('Time (seconds)')
-    plt.xlabel('Epicentral Distance (degrees)')
+    plt.ylabel('Time (seconds)', fontsize=24)
+    plt.xlabel('Epicentral Distance (degrees)', fontsize=24)
     plt.gca().set_xlim([30, 90])
     plt.gca().set_ylim([0, 150])
+    plt.xticks(fontsize=20)
+    plt.yticks(np.arange(0,150,30), fontsize=20)
     plt.gca().invert_yaxis()
 
 
@@ -274,7 +278,7 @@ else:
 if plot_histogram:
 
     # Add second subplot
-    ax2 = plt.subplot2grid((3, 1), (0, 0))
+    ax2 = plt.subplot(gs[0])
 
     # Loop through the bins
     for n in range(len(counter)):
@@ -285,8 +289,8 @@ if plot_histogram:
         ax2.add_patch(patches.Rectangle((mindist, 0), step, counter[n]))
 
     # Axes labels
-    plt.ylabel('Number of RFs')
-    plt.xlabel('Epicentral Distance (degrees)')
+    plt.ylabel('Number of RFs', fontsize=24)
+    plt.xlabel('Epicentral Distance (degrees)', fontsize=24)
 
     # Axes limits
     plt.gca().set_xlim([30, 90])
@@ -296,6 +300,9 @@ if plot_histogram:
     ax2.xaxis.tick_top()
     ax2.xaxis.set_label_position('top')
     plt.subplots_adjust(hspace=0)
+    
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
 
 # Don't plot histogram
 else:
@@ -322,7 +329,7 @@ plt.suptitle(
                                 bin_size)+' - '+str(
                                     Smooth))
 
-#plt.savefig("plot.pdf")
+plt.savefig(savepath+'Epicentral_Distance_Stack_'+str(count_yes)+'_RFs'+'.png')
 
 # Plot
 plt.show()
