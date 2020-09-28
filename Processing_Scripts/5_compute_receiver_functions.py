@@ -119,8 +119,6 @@ for i in range(len(stalist)):
             freqmax=fmax,
             corners=2,
             zerophase=True)
-        seis[0].stats['minfreq'] = fmin
-        seis[0].stats['maxfreq'] = fmax
         Pref.taper(max_percentage=0.05, type='cosine')
         SVref.taper(max_percentage=0.05, type='cosine')
 
@@ -178,6 +176,8 @@ for i in range(len(stalist)):
         out['filter'] = filttype
         out['filterconst'] = filterconst
         out['timeshift'] = 25.
+        out['minfreq'] = fmin
+        out['maxfreq'] = fmax
 
         # Check that both components are not zero length otherwise script will
         # crash
