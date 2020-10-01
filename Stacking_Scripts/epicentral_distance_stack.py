@@ -164,6 +164,12 @@ time = getattr(seis[0], filt)['time']
 # Used to emphasise the smaller peaks (other than direct P)
 NORMALIZATION = 0.075
 
+# Plot STACK
+plt.figure(figsize=(12, 8))
+gs = gridspec.GridSpec(2, 1, height_ratios=[1, 3])
+# Set up first subplot
+ax1 = plt.subplot(gs[1])
+
 # Smoothing process
 if smoothing:
 
@@ -195,26 +201,9 @@ if smoothing:
     # Normalize after direct P to bring out other features
     STACK_NEW[:,:] = STACK_NEW[:,:]/NORMALIZATION  
 
-    # Plot STACK
-    plt.figure(figsize=(12, 8))
-    gs = gridspec.GridSpec(2, 1, height_ratios=[1, 3])
-    # Set up first subplot
-    ax1 = plt.subplot(gs[1])
-
     # Plotting command (x axis, y axis, matrix of values, colourmap, min and
     # max values)
     plt.pcolor(epi_range, time, STACK_NEW, cmap='seismic', vmin=-1, vmax=1)
-
-    # Axes labels
-    plt.ylabel('Time (seconds)', fontsize=24)
-    plt.xlabel('Epicentral Distance (degrees)', fontsize=24)
-
-    # Axes limits
-    plt.gca().set_xlim([30, 90])
-    plt.gca().set_ylim([0, 150])
-    plt.gca().invert_yaxis()
-    plt.xticks(fontsize=20)
-    plt.yticks(np.arange(0,150,30), fontsize=20)
 
 # No smoothing process
 else:
@@ -223,15 +212,18 @@ else:
             STACK[:, m] = STACK[:, m]/counter[m]
             STACK[:, m] = STACK[:, m]/(np.nanmax(np.abs(STACK[:, m])))     
     STACK[:,:] = STACK[:,:]/NORMALIZATION  
-    ax1 = plt.subplot2grid((3, 1), (1, 1))
     plt.pcolor(epi_range, time, STACK, cmap='seismic', vmin=-1, vmax=1)
-    plt.ylabel('Time (seconds)', fontsize=24)
-    plt.xlabel('Epicentral Distance (degrees)', fontsize=24)
-    plt.gca().set_xlim([30, 90])
-    plt.gca().set_ylim([0, 150])
-    plt.xticks(fontsize=20)
-    plt.yticks(np.arange(0,150,30), fontsize=20)
-    plt.gca().invert_yaxis()
+    
+# Axes labels
+plt.ylabel('Time (seconds)', fontsize=24)
+plt.xlabel('Epicentral Distance (degrees)', fontsize=24)
+
+# Axes limits
+plt.gca().set_xlim([30, 90])
+plt.gca().set_ylim([0, 150])
+plt.gca().invert_yaxis()
+plt.xticks(fontsize=20)
+plt.yticks(np.arange(0,150,30), fontsize=20)
 
 
 #----------------------------------------Plot Predicted Travel Times------
