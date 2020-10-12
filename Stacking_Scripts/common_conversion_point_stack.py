@@ -1,37 +1,16 @@
 # common conversion point stacking
 
 # import modules
-import sys
-#sys.path.insert(1,'/raid2/sc845/Python/basemap-1.0.7/lib/')
-#sys.path.append('/raid2/sc845/Python/basemap-1.0.7/lib/python')
 
-#sys.path.append('/raid2/sc845/Python/lib/python/')
-sys.path.append('/raid2/sc845/Tomographic_models/EU60/')
-sys.path.append('/raid2/sc845/Python/geographiclib-1.34/')
-from geographiclib.geodesic import Geodesic as geo
 import numpy as np
-#from matplotlib.mlab import griddata
 import scipy
-from scipy import interpolate
-import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
-import numpy as np
 import os
 import os.path
 import math
 import msgpack
 import msgpack_numpy as m
 m.patch()
-import shutil
-from matplotlib.colors import LogNorm
-import matplotlib.cm as cm
 from obspy import read
-from scipy import stats
-
-import mpl_toolkits
-
-
-
 
 
 # definition of the half width of the fresnel zone
@@ -123,7 +102,6 @@ class ccp_volume(object):
             os.makedirs(dirout+'/RF_lists/')
         # Store initial empty PICKLE
         outfilename='../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/Stack_0.PICKLE'
-        donefilename='../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/list_of_stacks.txt'
 
         #setup volume grid
         grid_depth=np.linspace(depmin,depmax,num=deprez)

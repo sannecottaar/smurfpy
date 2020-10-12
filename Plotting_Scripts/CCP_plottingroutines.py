@@ -83,22 +83,392 @@ class ccp_volume(object):
 # Load latest volume to dictionary
 #
     def load_latest(self, name='Megavolume', filter='rff2', conversion='EU60', factor=1.):
-        line = open('../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/filenames.dat', 'r').readlines()[-1]
-        runnum = int(float(line.split()[0]))
-        volumefile = line.split()[1]
-        print('loading', name, runnum, volumefile)
-
-
-
-        # get last stackfile name
+        if os.path.isfile('../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/Stack_master.PICKLE'):
+            volumefile='../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/Stack_master.PICKLE'
+            print('loading', name, volumefile)
+        else:
+            line = open('../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/filenames.dat', 'r').readlines()[-1]
+    #        line = open('../AFR_CCP_volumes_SAFE/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/filenames.dat', 'r').readlines()[-1]    # A temporary solution....    
+            runnum = int(float(line.split()[0]))
+            volumefile = line.split()[1]
+            print('loading', name, runnum, volumefile)
 
         # Read in volumes
-
-        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
-        # del self.VOL['trackRFs']
+#        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
+        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode))
 
 
         return self
+
+
+#
+# Plot data coverage map at predefined depth
+#
+
+    def plot_datacoverage(self,depth,name='Megavolume',filter='rff2', conversion='prem', factor=2.):
+
+         coverage_file = open('../CCP_volumes/' + name + '_' + str(depth) + '_weights_' + conversion + '_' + str(filter) + '_' +str(int(factor))+'.txt', 'w')
+        fig = plt.figure(figsize=(6,6))
+        d = np.argmin(np.abs(self.VOL.grid_depth-depth))
+        slice = self.VOL.volumeweight[:,:, d].copy()
+
+
+        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
+
+        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=0, resolution='i')
+        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawcountries()
+        m.drawcoastlines(zorder=2, color='k', linewidth=1)
+
+        m.drawmapboundary(fill_color=[1.0, 1.0, 1.0])
+        x, y = m(xx, yy)
+
+        contours = [1., 1.e1, 1.e2, 1.e3, 1.e4]#[1.e0,1.e1,1.e2,1.e3,1.e4]
+        im =plt.contourf(x, y, slice.T, contours, norm=LogNorm(),zorder=1)
+#        To write out the volumeweights
+        for i in range(len(self.VOL.grid_lon)):
+            for j in range(len(self.VOL.grid_lat)):
+                coverage_file.write(str(self.VOL.grid_lon[i])+'\t')
+                coverage_file.write(str(self.VOL.grid_lat[j])+'\t')
+                coverage_file.write(str(slice.T[j,i])+'\n')
+        coverage_file.close()        
+
+        dep_str=str(depth)+'km'
+      
+        d_lon=np.min(self.VOL.grid_lon)+0.4
+        d_lat=np.min(self.VOL.grid_lat)+0.4       
+        x, y = m(d_lon, d_lat)  
+        plt.text(x, y,dep_str,fontsize=10,ha='left',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))    
+
+        fig.subplots_adjust(bottom=.2)
+        cbar_ax = fig.add_axes([0.2, 0.1, 0.6, 0.05])
+        cb = fig.colorbar(im, cax=cbar_ax, orientation='horizontal')
+        cb.set_label('Sum of weights at ' + str(depth) + ' km', fontsize=12)
+        cb.ax.tick_params(labelsize=10) 
+    
+
+
+#
+# Plot topography maps
+#
+
+    def plot_topography(self,mindepth,maxdepth,name='Megavolume',filter='rff2',conversion='prem',factor=2.,mincoverage=10., amplitude = True, blobs=True):
+        # Plots topography of maximum between mindepth and maxdepth, masking if sum of weights is beneath mincoverage.
+        # If amplitude =True, it will plot the amplitude and not the depth
+        # window buffer at end of depth array to not pick.
+        wb=5
+        
+        plt.figure(figsize=(10, 8))
+        depths = self.VOL.grid_depth
+        #print('depths are ', depths)
+        val_list = [x for x in range(len(depths)) if depths[x] > mindepth and depths[x] < maxdepth]
+        
+
+        # thickness = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        dmap = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        # coverage = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        dsign = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        
+        amparray=[]
+        for i in range(len(self.VOL.grid_lon)):
+            for j in range(len(self.VOL.grid_lat)):
+                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
+                plt.plot(RF)
+                 # This appears to be doing 1.96x std so its ~2std.
+                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
+                maxmap = np.argmax(RF[val_list])
+
+                if depths[val_list[maxmap]] > depths[val_list[wb-1]] and depths[val_list[maxmap]] < depths[val_list[-wb]]:
+                    if self.VOL.volumeweight[i, j, val_list[maxmap]] >= mincoverage:
+                        if abs(RF[val_list[maxmap]])>std[val_list[maxmap]]:
+                            dmap[i, j] = depths[val_list[maxmap]]
+
+
+        dmapall = np.ravel(dmap)
+        if amplitude == False:
+            l = [l for l in range(len(dmapall)) if dmapall[l] > mindepth+1. and dmapall[l] < maxdepth - 1.]
+            
+            median=         round(np.median((dmapall[l]))*100)/100
+            variance=       round(np.var((dmapall[l]))*100)/100
+            
+            med_str='med = ' + str(median)
+            var_str='var = ' + str(variance)
+            
+            print(med_str)
+            print(var_str)
+
+
+
+        # Prepare map
+        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
+
+        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawcountries()
+        m.drawcoastlines(zorder=1, color='k', linewidth=1)
+
+        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
+        x, y = m(xx, yy)
+
+        if amplitude is False:
+            cs = plt.pcolor(x, y, dmap.T, vmin=mindepth, vmax=maxdepth, cmap=lajolla_map, linewidth=0, rasterized=False)
+            #mask area if not significant
+            dsign=ma.masked_array(dsign, dsign==0)
+#            sign = plt.contourf(x, y, dsign.T, vmin=0.5, vmax=1.0, cmap=cm.Greys, linewidth=0, alpha=0.7, rasterized=False)
+        
+        else:
+            cs = plt.pcolor(x, y, dmap.T, vmin=0.02, vmax=0.12, cmap=lajolla_map, linewidth=0, rasterized=False)
+        cs.cmap.set_under([0.8, 0.8, 0.8])
+        cs.cmap.set_over([0.8, 0.8, 0.8])
+        #mindepth=np.argmin(dmap.T)
+        #maxdepth=np.argmax(dmap.T)
+        
+        cb = plt.colorbar(cs,ticks=[mindepth, mindepth+(maxdepth-mindepth)/6, mindepth+2*(maxdepth-mindepth)/6,mindepth+3*(maxdepth-mindepth)/6,mindepth+4*(maxdepth-mindepth)/6,mindepth+5*(maxdepth-mindepth)/6,maxdepth])
+
+        #cb.set_label('Maximum map between ' + str(mindepth)+' and ' + str(maxdepth)+' (km)', size=30)
+        if mindepth<400:
+            cb.set_label('Depth of 410 (km)', size=12)
+        else:
+            cb.set_label('Depth of 660 (km)', size=12)
+        cb.ax.tick_params(labelsize=10)
+        #cb.set_label('Amplitude')
+        
+        # Label region and conversion at top.
+        r_lon=np.max(self.VOL.grid_lon)-0.4
+        r_lat=np.max(self.VOL.grid_lat)-0.4
+        x, y = m(r_lon, r_lat)  
+        plt.text(x, y,region,fontsize=10,ha='right',va='top',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
+        
+        c_lon=np.min(self.VOL.grid_lon)+0.4
+        c_lat=np.max(self.VOL.grid_lat)-0.4
+        x, y = m(c_lon, c_lat)  
+        plt.text(x, y,conversion,fontsize=10,ha='left',va='top',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))         
+        
+        # Label median and variance at bottom.
+        med_lon=np.min(self.VOL.grid_lon)+0.4
+        med_lat=np.min(self.VOL.grid_lat)+0.4
+        x, y = m(med_lon, med_lat)  
+        plt.text(x, y,med_str,fontsize=10,ha='left',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
+        
+        var_lon=np.max(self.VOL.grid_lon)-0.4
+        var_lat=np.min(self.VOL.grid_lat)+0.4
+        x, y = m(var_lon, var_lat)  
+        plt.text(x, y,var_str,fontsize=10,ha='right',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))         
+               
+
+        # cb.set_ticks([380,400,420,440])
+        cb.solids.set_rasterized(True)
+        xt, yt = m(-13.2, 70.6)
+
+        m.drawcoastlines(zorder=1, color='k', linewidth=1)
+
+#
+# Plot map of MTZ width
+#
+
+
+
+
+
+    def plot_mtzwidth(self,name='Megavolume',filter='rff2',conversion='EU60',factor=2., mincoverage=10.):
+        # Plots topography of maximum between mindepth and maxdepth, masking if sum of weights is beneath mincoverage.
+        # window buffer at end of depth array to not pick.
+        wb=5
+   
+        plt.figure(figsize=(10, 8))
+        depths = self.VOL.grid_depth
+        print(depths)
+        l410 = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 430]
+        l660 = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 700]
+
+        # thickness = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        dmap = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        # coverage = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        
+        amparray=[]
+        for i in range(len(self.VOL.grid_lon)):
+            for j in range(len(self.VOL.grid_lat)):
+
+                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
+                plt.plot(RF)
+                # Again originally doing 1.96x std so changes to 1xstd
+                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
+                maxmap410 = np.argmax(RF[l410])
+                maxmap660 = np.argmax(RF[l660])
+                
+                if depths[l410[maxmap410]] > depths[l410[wb-1]] and depths[l410[maxmap410]] < depths[l410[-wb]] and depths[l660[maxmap660]] > depths[l660[wb-1]] and depths[l660[maxmap660]] < depths[l660[-wb]]:
+                    if self.VOL.volumeweight[i, j, l410[maxmap410]] >= mincoverage:
+                        if RF[l410[maxmap410]] > std[l410[maxmap410]] and RF[l660[maxmap660]] > std[l660[maxmap660]]:
+                            dmap[i, j] = depths[l660[maxmap660]]-depths[l410[maxmap410]]
+        
+        dmapall = np.ravel(dmap)
+        
+        l = [l for l in range(len(dmapall)) if dmapall[l] > 210+1. and dmapall[l] < 290 - 1.]
+        
+        median=         round(np.median((dmapall[l]))*100)/100
+        variance=       round(np.var((dmapall[l]))*100)/100
+        
+        med_str='med = ' + str(median)
+        var_str='var = ' + str(variance)
+        
+        print(med_str)
+        print(var_str)
+
+        # Prepare map
+        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
+
+        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawcountries()
+        m.drawcoastlines(zorder=1, color='k', linewidth=1)
+
+        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
+        x, y = m(xx, yy)
+
+        #cs = plt.contourf(x, y, dmap.T, vmin=220.,levels=np.linspace(220., 280., 81.), cmap=cm.RdBu) 
+        cs = plt.pcolor(x, y, dmap.T, vmin=220., vmax=280., cmap=cm.RdBu, linewidth=0, rasterized=True)
+
+
+        cs.cmap.set_under([0.8, 0.8, 0.8])
+        cs.cmap.set_over([0.8, 0.8, 0.8])
+        cb = plt.colorbar()
+        cb.set_label('Transition zone thickness (km)', size=12)
+        cb.set_ticks([220,235,250,265,280])
+        cb.ax.tick_params(labelsize=10)
+        cb.solids.set_rasterized(True)
+        xt, yt = m(-13.2, 70.6)
+
+        m.drawcoastlines(zorder=1, color='k', linewidth=1)
+        dmapall = np.ravel(dmap)
+
+
+
+
+    def plot_mtzwidth_write(self,name='Megavolume',filter='rff2',conversion='EU60',factor=2.):
+
+        #This routine is also used to make a txt file with the significant depths of the 410 and the 660
+        depth410660_2SE = open('../CCP_volumes/' + name + '_' + conversion+ '_'+ str(filter)+'_'+str(int(factor))+ '_MTZ_2SE_depths.txt', 'w')
+
+        
+        # plt.figure(figsize=(18, 8))
+        depths = self.VOL.grid_depth
+        l410 = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 430]
+        l660 = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 700]
+
+
+        thickness1D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        d4101D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        d6601D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        for i in range(len(self.VOL.grid_lon)):
+            for j in range(len(self.VOL.grid_lat)):
+
+
+                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
+                # Again originally 1.96 so changed to 1.
+                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
+                max410 = np.argmax(RF[l410])
+                max660 = np.argmax(RF[l660])
+                maxamp410 = np.max(RF[l410])
+                maxamp660 = np.max(RF[l660])
+                
+                # Store thickness, pick significance
+                if RF[l410[max410]] > std[l410[max410]]:
+                    sig_410=1
+                else:
+                    sig_410=0
+                    
+                if RF[l660[max660]] > std[l660[max660]]:
+                    sig_660=1
+                else:
+                    sig_660=0      
+                
+
+                COV410 = False; STD410 = False; WITHINLIM410 = False;  COV660 = False; STD660 = False; WITHINLIM660 = False
+                        
+                if self.VOL.volumeweight[i,j,l410[max410]]>=mincoverage: COV410 = True
+                if self.VOL.volumeweight[i,j,l660[max660]]>=mincoverage: COV660 = True
+                if RF[l410[max410]] > std[l410[max410]]                : STD410 = True
+                if RF[l660[max660]] > std[l660[max660]]                : STD660 = True
+                if depths[l410[max410]] > depths[l410[wb-1]] and depths[l410[max410]] < depths[l410[-wb]]: WITHINLIM410 = True
+                if depths[l660[max660]] > depths[l660[wb-1]] and depths[l660[max660]] < depths[l660[-wb]]: WITHINLIM660 = True
+       
+                if COV410 and WITHINLIM410 and COV660 and WITHINLIM660:
+                    if STD410 and STD660:
+                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
+                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str(depths[l410[max410]])+'\t')
+                        depth410660_2SE.write(str(depths[l660[max660]])+'\t')
+                        depth410660_2SE.write(str(sig_410)+'\t')
+                        depth410660_2SE.write(str(sig_660)+'\t')
+                        depth410660_2SE.write(str(maxamp410)+'\t')
+                        depth410660_2SE.write(str(maxamp660)+'\n') 
+
+                    elif STD660 and not STD410:
+                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
+                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str('NaN')+'\t')
+                        depth410660_2SE.write(str(depths[l660[max660]])+'\t')
+                        depth410660_2SE.write(str('NaN')+'\t')
+                        depth410660_2SE.write(str(sig_660)+'\t')                        
+                        depth410660_2SE.write(str('NaN')+'\t')
+                        depth410660_2SE.write(str(maxamp660)+'\n')                       
+                    
+                    elif STD410 and not STD660:
+                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
+                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str(depths[l410[max410]])+'\t')
+                        depth410660_2SE.write(str('NaN')+'\t')
+                        depth410660_2SE.write(str(sig_410)+'\t')
+                        depth410660_2SE.write(str('NaN')+'\t')                        
+                        depth410660_2SE.write(str(maxamp410)+'\t')
+                        depth410660_2SE.write(str('NaN')+'\n')  
+
+                if not COV410 and COV660 and WITHINLIM660:
+                    if STD660:
+                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
+                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str('NaN')+'\t')
+                        depth410660_2SE.write(str(depths[l660[max660]])+'\t')
+                        depth410660_2SE.write(str('NaN')+'\t')
+                        depth410660_2SE.write(str(sig_660)+'\t')                        
+                        depth410660_2SE.write(str('NaN')+'\t')
+                        depth410660_2SE.write(str(maxamp660)+'\n') 
+                            
+                if not COV660 and COV410 and WITHINLIM410:
+                    if STD410:
+                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
+                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str(depths[l410[max410]])+'\t')
+                        depth410660_2SE.write(str('NaN')+'\t')
+                        depth410660_2SE.write(str(sig_410)+'\t')
+                        depth410660_2SE.write(str('NaN')+'\t')                        
+                        depth410660_2SE.write(str(maxamp410)+'\t')
+                        depth410660_2SE.write(str('NaN')+'\n')  
+
+
+
+                    
+        # # Prepare map
+        # m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
+        # m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
+        # m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
+        # m.drawcoastlines(color='k')
+        # m.drawcountries(color='k')
+        # m.drawmapboundary(fill_color=[1.0, 1.0, 1.0])
+
+
+        # xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
+        # x, y = m(xx, yy)
+        # cs = plt.contourf(x, y, thickness1D.T, levels=np.linspace(220., 300., 81.), cmap=cm.gist_earth_r)
+        # cs.cmap.set_under('w')
+        # cs.cmap.set_over('w')
+
+        # plt.colorbar()
+        # plt.title('MTZ width')
+
+        #This routine is also used to make a txt file with the depth of the 410 and the 660
+        depth410660.close()
 
 
 #
@@ -107,7 +477,9 @@ class ccp_volume(object):
 
     def plot_crosssection(self, direction, lonorlat, amplify=1., name='Megavolume', filter='rff2', conversion='EU60', factor=2., zoom=False, mincoverage=10):
         # set volume lats and lons
-
+        # window buffer at end of depth array to not pick.
+        wb=5
+        
         if direction == 'NS':
             lon = lonorlat
             n = np.argmin(np.abs(self.VOL.grid_lon-lon))
@@ -163,8 +535,9 @@ class ccp_volume(object):
 
         plt.subplot(2, 2, 2)
         m = Basemap(projection='merc', llcrnrlat=self.VOL.latmin, urcrnrlat=self.VOL.latmax, llcrnrlon=self.VOL.lonmin, urcrnrlon=self.VOL.lonmax, lat_ts=20, resolution='i')
-        m.drawparallels(np.arange(0, 70, 10.), labels=[1, 0, 0, 1], labelstyle='+/-', fontsize=10)
-        m.drawmeridians(np.arange(-10, 60, 10.), labels=[1, 0, 0, 1], labelstyle='+/-', fontsize=10)
+        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+
 
         m.drawcoastlines()
         m.drawcountries()
@@ -185,7 +558,6 @@ class ccp_volume(object):
             m.scatter(x3, y3, 80, xaxis, zorder=2)
 
 
-
         norm = 0.2/amplify
 
         # plot
@@ -193,11 +565,10 @@ class ccp_volume(object):
         plt.subplot(2, 2, 1)
 
         xx, yy = np.meshgrid(xaxis, depths)
-        print(xx)
+        # print(xx)
 
         cs = plt.pcolor(xx, yy, crossec, vmin=-0.3, vmax=0.3, rasterized=True,cmap=cm.coolwarm)
 
-        #cs = plt.pcolor(xx, yy, crossec, vmin=-0.15, vmax=0.15, rasterized=True,cmap=cm.coolwarm)
         plt.colorbar()
         cs.cmap.set_over([0.8, 0.8, 0.8])
         if zoom:
@@ -206,7 +577,9 @@ class ccp_volume(object):
             plt.ylim([min(depths), max(depths)])
         plt.gca().invert_yaxis()
         plt.xlim(xends)
- 
+        plt.plot([min(xaxis), max(xaxis)], [410, 410], '--k', linewidth=0.2)
+        plt.plot([min(xaxis), max(xaxis)], [660, 660], '--k', linewidth=0.2)
+        
         plt.subplot(2, 1, 2)
 
         
@@ -215,16 +588,36 @@ class ccp_volume(object):
             lx = [x for x in range(0, len(depths)) if (np.abs(w[x, t]) > mincoverage)]# and np.abs(vol_sig[x,t])>std[x,t]/1.96)]
             RF = vol_sig[lx, t]/norm+xaxis[t]
             RFfull = crossec[lx, t]/norm+xaxis[t]
+            std = 1.96*np.sqrt(vol_sig[lx, t]/(w[lx, t]*w[lx, t]))
+
+            plt.fill_betweenx(depths[lx], RFfull, xaxis[t], where=RFfull >= xaxis[t], facecolor='k', rasterized=False)
+            plt.fill_betweenx(depths[lx], RFfull, xaxis[t], where=xaxis[t] >= RFfull, facecolor='k', rasterized=False)
+            plt.fill_betweenx(depths[lx], RF, xaxis[t], where=RF >= xaxis[t], facecolor=[1.0, 0., 0.], rasterized=False)
+            plt.fill_betweenx(depths[lx], RF, xaxis[t], where=xaxis[t] >= RF, facecolor=[0.0, 0.0, 1.], rasterized=False)
+            RF2 = crossec[lx, t]/norm
+            RF3 = vol_sig[lx, t]/norm
+            l410 = [x for x in range(len(depths[lx])) if depths[lx[x]] > 370 and depths[lx[x]] < 480]
+            l660 = [x for x in range(len(depths[lx])) if depths[lx[x]] > 620 and depths[lx[x]] < 740]
+            # This is the section where the picking occurs
+
+            if len(l410) > 20:
+                max410 = np.argmax(RF3[l410])
+                ind = lx[l410[max410]]
+                if depths[l410[max410]] > depths[l410[wb-1]] and depths[l410[max410]] < depths[l410[-wb]]:
+                    if np.abs(RF3[l410[max410]])>std[l410[max410]]/norm: # /1.96:
+                        plt.plot([xaxis[t]+0.1, 0.5*RF2[l410[max410]]+xaxis[t]], [depths[ind], depths[ind]], 'y', linewidth=4)
             
-            plt.fill_betweenx(depths[lx], RFfull, xaxis[t], where=RFfull >= xaxis[t], facecolor='k', rasterized=True)
-            plt.fill_betweenx(depths[lx], RFfull, xaxis[t], where=xaxis[t] >= RFfull, facecolor='k', rasterized=True)
-            plt.fill_betweenx(depths[lx], RF, xaxis[t], where=RF >= xaxis[t], facecolor=[1.0, 0., 0.], rasterized=True)
-            plt.fill_betweenx(depths[lx], RF, xaxis[t], where=xaxis[t] >= RF, facecolor=[0.0, 0.0, 1.], rasterized=True)
-        plt.scatter(np.round(xaxis/10.)*10., 80.*np.ones(len(xaxis),), 80, xaxis, rasterized=True)
-        plt.plot([-180, 140], [410, 410], '--k', linewidth=2)
-        #plt.plot([-180, 140], [520, 520], '--k', linewidth=2)
-        plt.plot([-180, 140], [660, 660], '--k', linewidth=2)
-        plt.ylabel('Depth (km)')
+            if len(l660) > 20:
+                max660 = np.argmax(RF3[l660])
+                ind = lx[l660[max660]]
+                if depths[l660[max660]] > depths[l660[wb-1]] and depths[l660[max660]] < depths[l660[-wb]]:
+                    if np.abs(RF3[l660[max660]])>std[l660[max660]]/norm: # /1.96:
+                        plt.plot([xaxis[t]+0.1, 0.5*RF2[l660[max660]]+xaxis[t]], [depths[ind], depths[ind]], 'y', linewidth=4)
+
+        plt.scatter(np.round(xaxis/10.)*10., 80.*np.ones(len(xaxis),), 80, xaxis, rasterized=False)
+        plt.plot([min(xaxis), max(xaxis)], [410, 410], '--k', linewidth=1)
+        plt.plot([min(xaxis), max(xaxis)], [660, 660], '--k', linewidth=1)
+        plt.ylabel('Depth (km)', fontsize=12)
         plt.xlabel(xlabel, fontsize=12)
         plt.xlim([min(xaxis), max(xaxis)])
 
@@ -246,6 +639,8 @@ class ccp_volume(object):
 
     def plot_crosssection_any(self, lon1,lon2,lat1,lat2,numpoints=200,amplify=1.,name='Megavolume',filter='rff2', conversion='EU60', factor=2.,zoom=False,mincoverage=10.):
         # set volume lats and lons
+        # window buffer at end of depth array to not pick.
+        wb=5
 
         inv = geo.WGS84.Inverse(lat1, lon1, lat2, lon2)
         points = np.linspace(0, inv['s12'], numpoints)
@@ -306,17 +701,14 @@ class ccp_volume(object):
                         vol_sig[i, j] = crossec[i, j]+1.96*np.sqrt(vol_sig[i, j]/(w[i, j]*w[i, j]))
                         if vol_sig[i, j] > 0:
                             vol_sig[i, j] = 0.
-
-   
                 else:
-                    crossec[i, j] = 100.
+                    crossec[i, j] = 1000.
                    
 
         plt.subplot(2, 2, 2)
         m = Basemap(projection='merc', llcrnrlat=self.VOL.latmin, urcrnrlat=self.VOL.latmax, llcrnrlon=self.VOL.lonmin, urcrnrlon=self.VOL.lonmax, lat_ts=20, resolution='i')
-        m.drawparallels(np.arange(0, 90, 10.), labels=[1, 0, 0, 1], labelstyle='+/-', fontsize=10)
-        m.drawmeridians(np.arange(-180, 60, 10.), labels=[1, 0, 0, 1], labelstyle='+/-', fontsize=10)
-
+        m.drawparallels(np.arange(-40, 40, 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(-20, 60, 20.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
         m.drawcoastlines()
         m.drawcountries()
 
@@ -333,10 +725,13 @@ class ccp_volume(object):
         plt.colorbar()
         cs.cmap.set_over([0.8, 0.8, 0.8])
         if zoom:
-            plt.ylim([200, 900])
+            plt.ylim([300, 800])
         else:
             plt.ylim([min(depths), max(depths)])
         plt.gca().invert_yaxis()
+        plt.xlim(xends)
+        plt.plot([min(xaxis), max(xaxis)], [410, 410], '--k', linewidth=0.2)
+        plt.plot([min(xaxis), max(xaxis)], [660, 660], '--k', linewidth=0.2)
   
 
 
@@ -350,472 +745,52 @@ class ccp_volume(object):
         pos1 = ax.get_position() # get the original position 
         pos2 = [pos1.x0 , pos1.y0 ,  pos1.width/14*8, pos1.height]
         pos2 = [pos1.x0 , pos1.y0 ,  pos1.width, pos1.height]
-        print(pos1,pos2)
         ax.set_position(pos2) # set a new position
-        print(ax.get_position())#
 
-            
-        print(ax.get_position())
-
-
-    # plot
+        # plot
 
         for t in np.arange(0, len(dist), 1):
 
             lx = [x for x in range(len(depths)) if (np.abs(w[x, t]) > mincoverage)]# and np.abs(vol_sig[x,t])>std[x,t]/1.96)]
             RF = vol_sig[lx, t]/norm+dist[t]
             RFfull = crossec[lx, t]/norm+dist[t]
+            std = 1.96*np.sqrt(vol_sig[lx, t]/(w[lx, t]*w[lx, t]))
 
-            plt.fill_betweenx(depths[lx], RFfull, dist[t], where=RFfull >= dist[t], facecolor='k', rasterized=True)
-            plt.fill_betweenx(depths[lx], RFfull, dist[t], where=dist[t] >= RFfull, facecolor='k', rasterized=True)
-            plt.fill_betweenx(depths[lx], RF, dist[t], where=RF >= dist[t], facecolor=[1.0, 0., 0.], rasterized=True)
-            plt.fill_betweenx(depths[lx], RF, dist[t], where=dist[t] >= RF, facecolor=[0.0, 0.0, 1.], rasterized=True)
+            plt.fill_betweenx(depths[lx], RFfull, dist[t], where=RFfull >= dist[t], facecolor='k',           rasterized=False)
+            plt.fill_betweenx(depths[lx], RFfull, dist[t], where=dist[t] >= RFfull, facecolor='k',           rasterized=False)
+            plt.fill_betweenx(depths[lx], RF,     dist[t], where=RF >= dist[t],     facecolor=[1.0, 0., 0.], rasterized=False)
+            plt.fill_betweenx(depths[lx], RF,     dist[t], where=dist[t] >= RF,     facecolor=[0.0, 0.0, 1.],rasterized=False)
             RF2 = crossec[lx, t]/norm
-            l410 = [x for x in range(len(depths[lx])) if depths[lx[x]] > 366 and depths[lx[x]] < 454]
-            l660 = [x for x in range(len(depths[lx])) if depths[lx[x]] > 616 and depths[lx[x]] < 704]
-            if len(l410) > 20:
-                max410 = np.argmax(RF2[l410])
-                ind = lx[l410[max410]]
-                plt.plot([dist[t]+0.1, 0.5*RF2[l410[max410]]+dist[t]], [depths[ind], depths[ind]], 'y', linewidth=2)
-            if len(l660) > 20:
-                max660 = np.argmax(RF2[l660])
-                ind = lx[l660[max660]]
-                plt.plot([dist[t]+0.1, 0.5*RF2[l660[max660]]+dist[t]], [depths[ind], depths[ind]], 'y', linewidth=2)
+            RF3 = vol_sig[lx, t]/norm
+            l410 = [x for x in range(len(depths[lx])) if depths[lx[x]] > 370 and depths[lx[x]] < 480]
+            l660 = [x for x in range(len(depths[lx])) if depths[lx[x]] > 620 and depths[lx[x]] < 740]
+            # This is the section where the picking occurs
+            # Need to add the std and array end catches. Min coverage is dealt with above.
 
-        plt.ylabel('Depth (km)', fontsize=28)
-        plt.xlabel('Angular distance (dg)', fontsize=28)
+            if len(l410) > 20:
+                max410 = np.argmax(RF3[l410])
+                ind = lx[l410[max410]]
+                if depths[l410[max410]] > depths[l410[wb-1]] and depths[l410[max410]] < depths[l410[-wb]]:
+                    if np.abs(RF3[l410[max410]])>std[l410[max410]]/norm: # /1.96:
+                        plt.plot([dist[t]+0.1, 0.5*RF2[l410[max410]]+dist[t]], [depths[ind], depths[ind]], 'y', linewidth=4)
+            
+            if len(l660) > 20:
+                max660 = np.argmax(RF3[l660])
+                ind = lx[l660[max660]]
+                if depths[l660[max660]] > depths[l660[wb-1]] and depths[l660[max660]] < depths[l660[-wb]]:
+                    if np.abs(RF3[l660[max660]])>std[l660[max660]]/norm: # /1.96:
+                        plt.plot([dist[t]+0.1, 0.5*RF2[l660[max660]]+dist[t]], [depths[ind], depths[ind]], 'y', linewidth=4)
+
+        plt.ylabel('Depth (km)', fontsize=12)
+        plt.xlabel('Angular distance (dg)', fontsize=12)
         plt.xlim([min(dist), max(dist)])
-        plt.plot([-5, 40], [410, 410], '--k', linewidth=2)
-        plt.plot([-5, 40], [660, 660], '--k', linewidth=2)
+        plt.plot([min(dist), max(dist)], [410, 410], '--k', linewidth=1)
+        plt.plot([min(dist), max(dist)], [660, 660], '--k', linewidth=1)
         if zoom:
-            plt.ylim([200, 800])
+            plt.ylim([300, 800])
         else:
             plt.ylim([min(depths), max(depths)])
         plt.gca().invert_yaxis()
-        print(ax.get_position())    
-
-
-
-#
-# Plot data coverage map at predefined depth
-#
-
-    def plot_datacoverage(self,depth,name='Megavolume',filter='rff2', conversion='EU60', factor=2.):
- 
-        fig = plt.figure(figsize=(6,6))
-        d = np.argmin(np.abs(self.VOL.grid_depth-depth))
-        slice = self.VOL.volumeweight[:,:, d].copy()
-
-
-        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
-
-        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
-        m.drawparallels(np.arange(0, 80, 10.), labels=[1, 0, 0, 1], linewidth=0.5, dashes=[4, 2], labelstyle='+/-', fontsize=22)
-        m.drawmeridians(np.arange(-160, -130, 20.), labels=[1, 0, 0, 1], linewidth=0.5, dashes=[4, 2], labelstyle='+/-', fontsize=22)
-        m.drawcountries()
-        coasts = m.drawcoastlines(zorder=2, color='k', linewidth=1)
-
-        m.drawmapboundary(fill_color=[1.0, 1.0, 1.0])
-        x, y = m(xx, yy)
-
-        contours = [1., 1.e1, 1.e2, 1.e3, 1.e4]#[1.e0,1.e1,1.e2,1.e3,1.e4]
-        im =plt.contourf(x, y, slice.T, contours, norm=LogNorm(),zorder=1)
-
-        lonmin=-157
-        lonmax=-143
-        latmin=58
-        latmax=67
-        #plot_line (m,lonmin,lonmax,latmin,latmax,col="Black")
-
-        lonmin=-159
-        lonmax=-131
-        latmin=59.5
-        latmax=66.5
-        plot_line (m,lonmin,lonmax,latmin,latmax,col="Black")#BB
-
-        lonmin=-160
-        lonmax=-142
-        latmin=58
-        latmax=63
-        plot_line (m,lonmin,lonmax,latmin,latmax,col="Black")#CC
-
-        lonmin=-157
-        lonmax=-140
-        latmin=57
-        latmax=69
-        plot_line (m,lonmin,lonmax,latmin,latmax,col="Black")#AA
-
-        lonmin=-164
-        lonmax=-154
-        latmin=56.5
-        latmax=60.5
-        plot_line (m,lonmin,lonmax,latmin,latmax,col="Black")#DD
-
-        
-
-        lonmin = -155.5
-        lonmax = -152
-        latmin =  66
-        latmax =  68
-        #plot_rectangle(m, lonmin,lonmax,latmin,latmax, col="Black")
-
-        lonmin = -154
-        lonmax = -148.5
-        latmin =  58
-        latmax =  60.5
-        #plot_rectangle(m, lonmin,lonmax,latmin,latmax, col="Black")
-
-        fig.subplots_adjust(bottom=.2)
-        cbar_ax = fig.add_axes([0.2, 0.1, 0.6, 0.05])
-        cb = fig.colorbar(im, cax=cbar_ax, orientation='horizontal')
-        cb.set_label('Sum of weights at ' + str(depth) + ' km', fontsize=36)
-    
-
-
-#
-# Plot topography maps
-#
-
-    def plot_topography(self,mindepth,maxdepth,name='Megavolume',filter='rff2',conversion='prem',factor=2.,mincoverage=10., amplitude = True, blobs=True):
-        # Plots topography of maximum between mindepth and maxdepth, masking if sum of weights is beneath mincoverage.
-        # If amplitude =True, it will plot the amplitude and not the depth
-        
-        plt.figure(figsize=(10, 8))
-        depths = self.VOL.grid_depth
-        #print('depths are ', depths)
-        val_list = [x for x in range(len(depths)) if depths[x] > mindepth and depths[x] < maxdepth]
-        
-
-        thickness = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        dmap = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        coverage = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        dsign = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        
-        amparray=[]
-        for i in range(len(self.VOL.grid_lon)):
-            for j in range(len(self.VOL.grid_lat)):
-
-                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
-                plt.plot(RF)
-                
-                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
-                maxmap = np.argmax(RF[val_list])
-                
-                if amplitude == False:
-                    dmap[i, j] = depths[val_list[maxmap]]
-                else:
-                    dmap[i,j] = RF[val_list[maxmap]]
-
-                #array for significance, 0=significant, 1=not significant    
-                if abs(RF[val_list[maxmap]])>std[val_list[maxmap]]:
-                    dsign[i,j] = 0.0
-                else:
-                    dsign[i,j] = 1.
-
-                    
-                if self.VOL.volumeweight[i, j, val_list[maxmap]] < mincoverage:
-                    dmap[i, j] = 1000.
-                    dsign[i,j]=0.
-
-        #plt.show()
-
-
-
-        # Prepare map
-        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
-
-        m.drawparallels(np.arange(0, 90, 5.), labels=[1, 0, 0, 1], linewidth=0.5, dashes=[4, 2], labelstyle='+/-', fontsize=20)
-        m.drawmeridians(np.arange(-180, -110, 10.), labels=[1, 0, 0, 1], linewidth=0.5, dashes=[4, 2], labelstyle='+/-', fontsize=20)
-        m.drawcountries()
-        coasts = m.drawcoastlines(zorder=1, color='k', linewidth=1)
-
-
-
-
-        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
-        x, y = m(xx, yy)
-
-        if amplitude is False:
-            cs = plt.pcolor(x, y, dmap.T, vmin=mindepth, vmax=maxdepth, cmap=cm.BrBG, linewidth=0, rasterized=True)
-            #mask area if not significant
-            dsign=ma.masked_array(dsign, dsign==0)
-            sign = plt.contourf(x, y, dsign.T, vmin=0.5, vmax=1.0, cmap=cm.Greys, linewidth=0, alpha=0.7, rasterized=False)
-        
-        else:
-            cs = plt.pcolor(x, y, dmap.T, vmin=0.02, vmax=0.12, cmap=cm.pink_r, linewidth=0, rasterized=True)
-        cs.cmap.set_under([0.8, 0.8, 0.8])
-        cs.cmap.set_over([0.8, 0.8, 0.8])
-        #mindepth=np.argmin(dmap.T)
-        #maxdepth=np.argmax(dmap.T)
-        
-        cb = plt.colorbar(cs,ticks=[mindepth, mindepth+(maxdepth-mindepth)/6, mindepth+2*(maxdepth-mindepth)/6,mindepth+3*(maxdepth-mindepth)/6,mindepth+4*(maxdepth-mindepth)/6,mindepth+5*(maxdepth-mindepth)/6,maxdepth])
-
-        #cb.set_label('Maximum map between ' + str(mindepth)+' and ' + str(maxdepth)+' (km)', size=30)
-        if mindepth==380:
-            cb.set_label('Depth of 410 (km)', size=30)
-        else:
-            cb.set_label('Depth of 660 (km)', size=30)
-        cb.ax.tick_params(labelsize=30)
-        #cb.set_label('Amplitude')
-        
-        # cb.set_ticks([380,400,420,440])
-        cb.solids.set_rasterized(True)
-        xt, yt = m(-13.2, 70.6)
-
-        m.drawcoastlines(zorder=1, color='k', linewidth=1)
-        dmapall = np.ravel(dmap)
-        if amplitude == False:
-            l = [l for l in range(len(dmapall)) if dmapall[l] > mindepth+1. and dmapall[l] < maxdepth - 1.]
-            print ('median', np.median((dmapall[l])))
-            print ('variance', np.var((dmapall[l])))
-
-
-        if blobs == True:
-            latblob = []
-            lonblob = []
-            with open ('/raid1/annemijn/scripts/CCP/areared.txt') as blobs:
-                for line in blobs:
-                    row = line.split()
-                    latblob.append(float(row[0]))
-                    lonblob.append(float(row[1]))
-            print (latblob)
-            x,y = m(lonblob, latblob)
-            m.scatter(x,y,marker='o',color='firebrick')
-
-            latblob = []
-            lonblob = []
-            with open ('/raid1/annemijn/scripts/CCP/areayellow.txt') as blobs:
-                for line in blobs:
-                    row = line.split()
-                    latblob.append(float(row[0]))
-                    lonblob.append(float(row[1]))
-            print (latblob)
-            x,y = m(lonblob, latblob)
-            m.scatter(x,y,marker='o',color='gold')
-
-            latblob = []
-            lonblob = []
-            with open ('/raid1/annemijn/scripts/CCP/areagreen.txt') as blobs:
-                for line in blobs:
-                    row = line.split()
-                    latblob.append(float(row[0]))
-                    lonblob.append(float(row[1]))
-            print (latblob)
-            x,y = m(lonblob, latblob)
-            m.scatter(x,y,marker='o',color='forestgreen')
-
-            latblob = []
-            lonblob = []
-            with open ('/raid1/annemijn/scripts/CCP/areablue.txt') as blobs:
-                for line in blobs:
-                    row = line.split()
-                    latblob.append(float(row[0]))
-                    lonblob.append(float(row[1]))
-            print (latblob)
-            x,y = m(lonblob, latblob)
-            m.scatter(x,y,marker='o',color='dodgerblue')
-
-
-        lonmin = -142.1
-        lonmax = -128
-        latmin =  69
-        latmax =  74
-        #plot_rectangle(m, lonmin,lonmax,latmin,latmax)
-
-        lonmin = -136
-        lonmax = -128
-        latmin =  54
-        latmax =  63
-        #plot_rectangle(m, lonmin,lonmax,latmin,latmax)
-
-        lonmin = -157
-        lonmax = -150
-        latmin =  67.5
-        latmax =  69
-        #plot_rectangle(m, lonmin,lonmax,latmin,latmax)
-
-        lonmin = -154
-        lonmax = -149
-        latmin =  66
-        latmax =  68
-        #plot_rectangle(m, lonmin,lonmax,latmin,latmax, col="Black")
-
-        lonmin = -155
-        lonmax = -150
-        latmin =  56.5
-        latmax =  59.5
-        #plot_rectangle(m, lonmin,lonmax,latmin,latmax, col="Black")
-
-        lonmin=-159
-        lonmax=-131
-        latmin=59.5
-        latmax=66.5
-        #plot_line (m,lonmin,lonmax,latmin,latmax,col="Black")#BB
-
-        lonmin=-160
-        lonmax=-142
-        latmin=58
-        latmax=63
-        #plot_line (m,lonmin,lonmax,latmin,latmax,col="Black")#CC
-
-        lonmin=-157
-        lonmax=-140
-        latmin=57
-        latmax=69
-        #plot_line (m,lonmin,lonmax,latmin,latmax,col="Black")#AA
-
-#
-# Plot map of MTZ width
-#
-
-
-
-
-
-    def plot_mtzwidth(self,name='Megavolume',filter='rff2',conversion='EU60',factor=2., mincoverage=10.):
-        # Plots topography of maximum between mindepth and maxdepth, masking if sum of weights is beneath mincoverage.
-
-        #depth410660 = open('/raid3/annemijn/scripts/CCP/mincov20MTZ_'+conversion+'_'+filter+'_'+str(int(factor))+'.txt', 'w')
-    
-        plt.figure(figsize=(10, 8))
-        depths = self.VOL.grid_depth
-        print(depths)
-        l410 = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 430]
-        l660 = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 700]
-
-        thickness = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        dmap = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        coverage = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        
-        amparray=[]
-        for i in range(len(self.VOL.grid_lon)):
-            for j in range(len(self.VOL.grid_lat)):
-
-                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
-                plt.plot(RF)
-                
-                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
-                maxmap410 = np.argmax(RF[l410])
-                maxmap660 = np.argmax(RF[l660])
-                
-                if RF[l410[maxmap410]] > std[l410[maxmap410]] and RF[l660[maxmap660]] > std[l660[maxmap660]]:
-                    dmap[i, j] = depths[l660[maxmap660]]-depths[l410[maxmap410]]
-
-                #depth410660.write(str(self.VOL.grid_lat[j])+'\t')
-                #depth410660.write(str(self.VOL.grid_lon[i])+'\t')
-                #depth410660.write(str(depths[l410[maxmap410]])+'\t')
-                #depth410660.write(str(depths[l660[maxmap660]])+'\t')
-
-                
-                if self.VOL.volumeweight[i, j, l410[maxmap410]] < mincoverage:
-                    dmap[i, j] = 1000.
-
-        # Prepare map
-        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
-
-        m.drawparallels(np.arange(0, 90, 5.), labels=[1, 0, 0, 1], linewidth=0.5, dashes=[4, 2], labelstyle='+/-', fontsize=20)
-        m.drawmeridians(np.arange(-180, -110, 10.), labels=[1, 0, 0, 1], linewidth=0.5, dashes=[4, 2], labelstyle='+/-', fontsize=20)
-        m.drawcountries()
-        coasts = m.drawcoastlines(zorder=1, color='k', linewidth=1)
-
-        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
-        x, y = m(xx, yy)
-
-        #cs = plt.contourf(x, y, dmap.T, vmin=220.,levels=np.linspace(220., 280., 81.), cmap=cm.RdBu) 
-        cs = plt.pcolor(x, y, dmap.T, vmin=220., vmax=280., cmap=cm.RdBu, linewidth=0, rasterized=True)
-
-
-        cs.cmap.set_under([0.8, 0.8, 0.8])
-        cs.cmap.set_over([0.8, 0.8, 0.8])
-        cb = plt.colorbar()
-        cb.set_label('Transition zone thickness (km)', size=30)
-        cb.set_ticks([220,235,250,265,280])
-        cb.ax.tick_params(labelsize=30)
-        cb.solids.set_rasterized(True)
-        xt, yt = m(-13.2, 70.6)
-
-        m.drawcoastlines(zorder=1, color='k', linewidth=1)
-        dmapall = np.ravel(dmap)
-
-        lonmin = -158
-        lonmax = -154
-        latmin =  57.5
-        latmax =  60
-        #plot_rectangle(m, lonmin,lonmax,latmin,latmax, col="Black")
-
-        #l = [l for l in range(len(dmapall)) if dmapall[l] > mindepth+1. and dmapall[l] < maxdepth - 1.]
-        #print ('median', np.median((dmapall[l])))
-        #print ('variance', np.var((dmapall[l])))
-
-
-
-
-    def plot_mtzwidth_write(self,name='Megavolume',filter='rff2',conversion='EU60',factor=2.):
-
-        #This routine is also used to make a txt file with the significant depths of the 410 and the 660
-        #depth410660 = open('/raid3/annemijn/scripts/CCP/mincov40MTZ_'+conversion+'_'+filter+'_'+str(int(factor))+'.txt', 'w')
-        depth410660 = open('/raid1/annemijn/scripts/CCP/MTZsign_mincov40_'+conversion+'_'+filter+'_'+str(int(factor))+'.txt', 'w')
-
-        
-        plt.figure(figsize=(18, 8))
-        depths = self.VOL.grid_depth
-        l410 = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 430]
-        l660 = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 700]
-
-
-        thickness1D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        d4101D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        d6601D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        for i in range(len(self.VOL.grid_lon)):
-            for j in range(len(self.VOL.grid_lat)):
-
-
-                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
-                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
-                max410 = np.argmax(RF[l410])
-                max660 = np.argmax(RF[l660])
-                maxamp410 = np.max(RF[l410])
-                maxamp660 = np.max(RF[l660])
-
-                # If both picks are significant, store thickness
-                if RF[l410[max410]] > std[l410[max410]] and RF[l660[max660]] > std[l660[max660]]:
-                    d4101D[i, j] = depths[l410[max410]]
-                    d6601D[i, j] = depths[l660[max660]]
-                    thickness1D[i, j] = (depths[l660[max660]]-depths[l410[max410]])
-
-                    if self.VOL.volumeweight[i,j,l410[max410]]>=40:
-
-                    #This routine is also used to make a txt file with the depth of the 410 and the 660
-                        depth410660.write(str(self.VOL.grid_lat[j])+'\t')
-                        depth410660.write(str(self.VOL.grid_lon[i])+'\t')
-                        depth410660.write(str(depths[l410[max410]])+'\t')
-                        depth410660.write(str(depths[l660[max660]])+'\t')
-                        depth410660.write(str(maxamp410)+'\t')
-                        depth410660.write(str(maxamp660)+'\n')
-
-
-
-                    
-        # Prepare map
-        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
-        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
-        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
-        m.drawcoastlines(color='k')
-        m.drawcountries(color='k')
-        m.drawmapboundary(fill_color=[1.0, 1.0, 1.0])
-
-
-        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
-        x, y = m(xx, yy)
-        cs = plt.contourf(x, y, thickness1D.T, levels=np.linspace(220., 300., 81.), cmap=cm.gist_earth_r)
-        cs.cmap.set_under('w')
-        cs.cmap.set_over('w')
-
-        plt.colorbar()
-        plt.title('MTZ width')
-
-        #This routine is also used to make a txt file with the depth of the 410 and the 660
-        depth410660.close()
 
 
 
@@ -829,12 +804,12 @@ class ccp_volume(object):
         depths = self.VOL.grid_depth
 
         if d660:
-            ldisc = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 730]
-            disc = np.arange(630., 690., 2.)
-            ldisc2 = [x for x in range(len(depths)) if depths[x] > 360 and depths[x] < 460]
+            ldisc = [x for x in range(len(depths)) if depths[x] > 620 and depths[x] < 700]
+            disc = np.arange(620., 700., 2.)
+            ldisc2 = [x for x in range(len(depths)) if depths[x] > 370 and depths[x] < 450]
         else:
-            ldisc = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 430]
-            disc = np.arange(380, 440, 2.)
+            ldisc = [x for x in range(len(depths)) if depths[x] > 370 and depths[x] < 450]
+            disc = np.arange(370, 450, 2.)
 
 
 
@@ -848,7 +823,9 @@ class ccp_volume(object):
                 RF = self.VOL.volume[i, j,:]
                 for k in range(len(depths)):
                     if self.VOL.volumeweight[i, j, k] > 0:
+                        RF.setflags(write=1)
                         RF[k] = RF[k]/self.VOL.volumeweight[i, j, k]
+
                 std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
 
                 maxdisc = np.argmax(RF[ldisc])
@@ -859,7 +836,7 @@ class ccp_volume(object):
                     n = np.nanargmin(np.abs(depths[ldisc[maxdisc]]-disc))
                     weights[n] = weights[n]+1.
                     moveout[n,:] = moveout[n,:]+RF
-
+#                    if d660:
                     maxdisc = np.nanargmax(RF[ldisc2])
                     d410l.append(depths[ldisc2[maxdisc]])
 
@@ -867,11 +844,11 @@ class ccp_volume(object):
         d660l = np.array(d660l)
         d410l = np.array(d410l)
  
-        d660c = np.arange(640., 690., 2.)
+        d660c = np.arange(620., 700., 2.)
         d410c = []
         err = []
         for i in range(len(d660c)):
-            filt = [d410l[x] for x in range(len(d410l)) if (d660l[x] == d660c[i] and d410l[x] > 360 and d410l[x] < 460)]
+            filt = [d410l[x] for x in range(len(d410l)) if (d660l[x] == d660c[i] and d410l[x] > 370 and d410l[x] < 450)]
             d410c.extend([np.mean(filt)])
             err.extend([np.std(filt)])
         d410c = np.array(d410c)
@@ -888,14 +865,14 @@ class ccp_volume(object):
                     max660 = np.argmax(moveout[i, ldisc])
                     discp.append(depths[ldisc[max660]])
                     midp.append(disc[i])
-                    l410 = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 440]
+                    l410 = [x for x in range(len(depths)) if depths[x] > 370 and depths[x] < 450]
                     max410 = np.argmax(moveout[i, l410])
                     discp2.append(depths[l410[max410]])
                 else:
                     max410 = np.argmax(moveout[i, ldisc])
                     discp.append(depths[ldisc[max410]])
                     midp.append(disc[i])
-                    l660 = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 700]
+                    l660 = [x for x in range(len(depths)) if depths[x] > 620 and depths[x] < 700]
                     max660 = np.argmax(moveout[i, l660])
                     discp2.append(depths[l660[max660]])
       
@@ -903,7 +880,7 @@ class ccp_volume(object):
         ax = plt.subplot2grid((3, 6), (0, 0), colspan=5)
  
         if d660:
-            n, bins, patches = plt.hist(d660l, np.arange(639., 713., 2.), histtype='bar')
+            n, bins, patches = plt.hist(d660l, np.arange(620., 700., 2.), histtype='bar')
             data = zip(bins+1., n) # +1 as the stack resolution is only at even values
             cmbl = plt.cm.get_cmap('bone_r')
             for d, p in zip(n, patches):
@@ -911,16 +888,16 @@ class ccp_volume(object):
             # f=open('histogram_660.txt','wb')
             # np.savetxt(f,data,delimiter='\t')
         else:
-            plt.hist(d660l, np.arange(389, 431, 2.), histtype='bar')
+            plt.hist(d410l, np.arange(370, 450, 2.), histtype='bar')
         plt.ylabel('# of grid points')
-        plt.text(645, 600, 'a.', fontsize=16)
+        plt.text(645, 180, 'a.', fontsize=12)
         if d660:
             # plt.xlabel('660 depth (km)')
-            plt.xlim([644.9, 691.07])
+            plt.xlim([645, 695])
         else:
             plt.xlabel('410 depth (km)')
-            plt.xlim([390, 430])
-        plt.gca().set_yticks([0, 100, 300, 500, 700])
+            plt.xlim([395, 435])
+        plt.gca().set_yticks([0, 50, 100, 150, 200])
         plt.gca().set_xticks([650, 660, 670, 680, 690])
         ax.spines['top'].set_visible(False)
         ax.spines['left'].set_visible(False)
@@ -938,21 +915,21 @@ class ccp_volume(object):
         plt.ylabel('Depth (km)')
 
         if d660:
-            plt.xlim([644.9, 691.07])
+            plt.xlim([645, 695])
             plt.xlabel('660 depth (km)')
         else:
-            plt.xlim([390, 430])
+            plt.xlim([395, 435])
             plt.xlabel('410 depth (km)')
         plt.ylim([350, 750])
         plt.gca().invert_yaxis()
-        plt.text(646, 380, 'b.', fontsize=16)
+        plt.text(646, 380, 'b.', fontsize=12)
         box = plt.gca().get_position()
         axcb = plt.axes([box.x0*1.05+box.width*1.05, box.y0+0.1, 0.01, box.height-0.2])
         cb = plt.colorbar(cs, cax=axcb, orientation='vertical')
         cb.set_ticks([-0.1, 0., .1])
         cb.set_label('relative amplitude')
-
-        plt.show()
+        
+        plt.suptitle(region + ' - ' + str(conversion))
 
 
 

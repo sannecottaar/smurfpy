@@ -16,6 +16,14 @@ from obspy import read
 import os, sys, glob
 import subprocess
 
+PREM=True
+ak135=False
+if PREM:
+    mod='prem'
+elif ak135:
+    mod='ak135'
+
+
 
 # Make and open a data file in the Piercepoints directory for this phase
 # and depth ('w' = writable)
@@ -68,7 +76,7 @@ for stadir in stadirs:
             print('runthis is True')
             # Call taup_pierce to get piercepoints
             test = [
-                'taup_pierce -mod prem -h ' + str(
+                'taup_pierce -mod ' + str(mod) + ' -h ' + str(
                     EVDP) + ' -ph ' + sys.argv[
                         2] + ' -pierce ' + sys.argv[
                             1] + ' -nodiscon -sta ' + str(

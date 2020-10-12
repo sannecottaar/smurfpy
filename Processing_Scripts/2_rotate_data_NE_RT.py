@@ -56,6 +56,7 @@ for stadir in stations:
         EVDP = onestation[0].stats['evdp']
         STLA = onestation[0].stats['stla']
         STLO = onestation[0].stats['stlo']
+        STEL = onestation[0].stats['stel']
         DIST = onestation[0].stats['dist']
         AZ = onestation[0].stats['az']
         STATION = onestation[0].stats['station']
@@ -266,6 +267,7 @@ for stadir in stations:
                 seisnew[0].stats['evdp'] = EVDP
                 seisnew[0].stats['stla'] = STLA
                 seisnew[0].stats['stlo'] = STLO
+                seisnew[0].stats['stel'] = STEL
                 seisnew[0].stats['dist'] = DIST
                 seisnew[0].stats['az'] = AZ
                 seisnew[0].stats['baz'] = BAZ

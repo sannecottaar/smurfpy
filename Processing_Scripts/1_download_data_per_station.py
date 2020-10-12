@@ -198,6 +198,12 @@ def download_data(start, end):
                         orientation = nw.get_orientation(str(identifier), t)
                         seis[cha].stats['orientation'] = orientation['azimuth']
                         seis[cha].stats['dip'] = orientation['dip']
+                        # Add the station elevation to the vertical component
+                        if cha == 0:
+                            inv = inventory.select(network=str(nw.code), station=str(sta.code))
+                            stel=inv.get_coordinates(identifier,t)['elevation']/1000 # stel in kilometers, positive is upward topography.
+                            seis[cha].stats['stel'] = stel
+
 
                     # Write out to file
                     filename = direc + '/' + \
