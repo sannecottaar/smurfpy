@@ -1,465 +1,567 @@
-#
-import obspy
-from obspy.core import trace
-from obspy import read
+'''
+Slowness_Stack_Error_New.py
+Used to distinguish which signals in the time or depth against epicentral angle stack are converted phases and which signals are multiples.
+---Multiples come from shallower angles, therefore the velocity is lower and the slowness is +ve wrt the direct P wave.
+---Converted phases come from steeper angles, therefore the velocity is higher and the slowness is -ve wrt the direct P wave.
 
-print(obspy.__version__)
+This script forms a plot of slowness against time, using a specfic epicentral reference distance.
+
+'''
+
+#-------------------------------Set up------------------------------------
+
+#Import required modules
+from obspy import read
 import matplotlib.pyplot as plt
 import os.path
 import time
 import glob
-import shutil
 import numpy as np
-#import receiver_function as rf
-import subprocess
-import scipy
-from scipy import interpolate
 import pickle
-import rosediagram
-import gc
+from shapely.geometry import Point, Polygon
 
+#Array of zeros, slowness stack high and 2*length of RF wide
+#201 as 1 to -1 in steps of 0.01
+STACK = np.zeros([201,1751])
 
+#Define epicentral distance reference
+epi_ref = 60 #Choose based upon epicentral distance range of data, mid-point is good first estimate
 
-
-
-##########################################################################################
+#Define epicentral distance bounds
+epimin = 30 
+epimax = 90 
 
-def compute_fromlist(stalist,filefig,fileout,stacklat,stacklon,stackrad,comp='jgf1',dcorr=None):
-    refdepths=[]
-    reftimes=[]
-    reftakeoff=[]
-    refslow=[]
-    azimuths=[]
-    eqdepths=[]
-
-    # referencing to 65 degrees
-    test=['taup_time -mod prem -deg 65 -h 20 -ph P,Pms,P210s,P410s,P660s']
-    out=subprocess.check_output(test,shell=True).decode('utf-8')
-    t= out.split()
-    l=[x for x in range(len(t)) if t[x]=='P']
-    Pt= float(t[l[0]+1])
-    Pslow=float(t[l[0]+2])
-    Pi=float(t[l[0]+3])
-    refdepths.append(0.)
-    reftimes.append(0.)
-    refslow.append(0.)
-    reftakeoff.append(np.nan)
-    l=[x for x in range(len(t)) if t[x]=='Pms']
-    refdepths.append(33.)
-    reftimes.append( float(t[l[0]+1]))
-    refslow.append(float(t[l[0]+2])-Pslow)
-    reftakeoff.append(float(t[l[0]+3]))
-    l=[x for x in range(len(t)) if t[x]=='P210s']
-    refdepths.append(220.)
-    reftimes.append( float(t[l[0]+1])-Pt)
-    refslow.append(float(t[l[0]+2])-Pslow)
-    reftakeoff.append(float(t[l[0]+3]))
-    l=[x for x in range(len(t)) if t[x]=='P410s']
-    refdepths.append(400.)
-    reftimes.append( float(t[l[0]+1])-Pt)
-    refslow.append(float(t[l[0]+2])-Pslow)
-    reftakeoff.append(float(t[l[0]+3]))
-    l=[x for x in range(len(t)) if t[x]=='P660s']
-    refdepths.append(670.)
-    reftimes.append( float(t[l[0]+1])-Pt)
-    refslow.append(float(t[l[0]+2])-Pslow)
-    reftakeoff.append(float(t[l[0]+3]))
-
-    timespace=np.linspace(-10,120,1210)
-
-
-
-    slow_poly=np.polyfit(reftimes,refslow,4)
-    slowness=np.poly1d(slow_poly)
-    depths_poly=np.polyfit(reftimes,refdepths,4)
-    depths=np.poly1d(depths_poly)
-
-
-
-    f=plt.figure(figsize=(8,12)) 
-
-
-    slow=np.linspace(-0.7,0.7,200)
-    depthsspace=np.linspace(-10,1500,1510)
-
-    c=0
-    # Download all data too list
-
-    for i in range(len(stalist)): #range(cat.count()):
-
-        if stalist[i][:3]=='Dat':
-            stalist[i]='../'+stalist[i]
-        print('stacking', i,stalist[i])
-
-        if os.path.isfile(stalist[i]):
-
-            seis=read(stalist[i],format='PICKLE')
-
-            dt=0.1#seis[0].stats['delta']
-            dist=seis[0].stats['dist']
-            baz=seis[0].stats['baz']
-
-            RF=trace.Trace()
-            # load receiver function
-            if comp=='rff2':
-                RF.data= np.real(seis[0].rff2['iterativedeconvolution'])
-            if comp=='rff1':
-                RF.data= np.real(seis[0].rff1['iterativedeconvolution'])
-            if comp=='jgf1':
-                RF.data= np.real(seis[0].jgf1['iterativedeconvolution'])
-            if comp=='jgf2':
-                RF.data= np.real(seis[0].jgf2['iterativedeconvolution'])
-            time=seis[0].jgf1['time']
-            RF.data=RF.data/np.max(np.abs(RF.data))
-
-            indm=np.argmax(np.abs(RF.data[200:260]))+200
-
-            RF.taper(max_percentage=0.05, type='cosine')
-
-            RFtmp=np.zeros((len(RF.data)+int(2.*20./dt),))
-            b=int(20/dt-indm+25/dt)
-            if np.mean(RF.data[indm-10:indm+10])<0.:
-                RF.data=RF.data*-1.
-            print(len(RF.data))
-            RFtmp[b:b+len(RF.data)]= RF.data/np.max(np.abs(RF.data))
-
-            RFdepth=interpolate.griddata(seis[0].conversions['prem']['depthsfortime'],RF.data,depthsspace)
- 
-            # build slowness and depth-converted stack
-            if (c==0):
-                    slowstack=np.zeros((len(slow),len(RF.data))  )   
-                    depthstack=np.zeros(len(RFdepth),)
-                    timeref=time
-                    if dcorr:
-                        depthstackcorr=np.zeros(len(depthsspace),)
-                        nancount =np.zeros(len(depthsspace),)
-            # stack after depth conversion
-            depthstack=depthstack+RFdepth
-
-            # stack 3D corrected data
-            if dcorr:
-                RFdepthcorr=interpolate.griddata(seis[0].conversions[dcorr]['depthsfortime'],RF.data,depthsspace)
-                nancount[~np.isnan(RFdepthcorr)]=nancount[~np.isnan(RFdepthcorr)]+1.
-                RFdepthcorr[np.isnan(RFdepthcorr)]=0
-                depthstackcorr=depthstackcorr+RFdepthcorr
-
-            # stack in slowness domain
-            for s in range(len(slow)):
-                    timeshift=int(round((65.-dist)*slow[s]/dt))
-                    if (len(RFtmp[int(20./dt-timeshift):int(20./dt-timeshift+np.shape(slowstack)[1])])==np.shape(slowstack[1])[0]):
-                        slowstack[s,:]=slowstack[s,:]+RFtmp[int(20./dt-timeshift):int(20./dt-timeshift+np.shape(slowstack)[1])]
-	   
-            #if plot:
-            #    plt.subplot(411)
-            #    dist=(seis[0].stats['distancedg'])
-            #    plt.scatter(time,dist*np.ones(np.shape(time)),s=1,c=RF.data,vmin=-.5,vmax=.5, edgecolors='none')
-
- 
-            c=c+1
-
-
-    # calculate normalized stack
-    slowstack=slowstack/float(c)
-    slowstacknorm=slowstack.copy()
-    int35=int(35./dt)
-    int55=int(55./dt)
-    slowstacknorm[:,0:int55]=slowstack[:,0:int55]/np.nanmax(np.abs(slowstack[:,0:int55]))
-    slowstacknorm[:,35./dt:55./dt]=slowstack[:,35./dt:55./dt]/np.nanmax(np.abs(slowstack[:,35./dt:55./dt]))
-    slowstacknorm[:,int55:-1]=slowstack[:,int55:-1]/np.nanmax(np.abs(slowstack[:,int55:-1])) 
-
-
-    slowstackmax1=np.nanmax(np.abs(slowstack[:,int35:int55]))/np.nanmax(np.abs(slowstack[:,0:int35]))
-    slowstackmax2=np.nanmax(np.abs(slowstack[:,int55:-1]))/np.nanmax(np.abs(slowstack[:,0:int35]))
-    #normalize depthstack
-    x1=np.argmin(np.abs(depthsspace-depths(10.)))
-    x2=np.argmin(np.abs(depthsspace-depths(30.)))
-
-    depthstack=depthstack/c
-    depthstacknorm=depthstack.copy()   
-    depthstacknorm[0:x1]=depthstack[0:x1]/np.nanmax(np.abs(depthstack[0:x1]))
-    depthstacknorm[x1:x2]=depthstack[x1:x2]/np.nanmax(np.abs(depthstack[x1:x2]))
-    depthstacknorm[x2:-1]=depthstack[x2:-1]/np.nanmax(np.abs(depthstack[x2:-1])) 
-
-    depthstackmax1=np.nanmax(np.abs(depthstack[x1:x2]))/np.nanmax(np.abs(depthstack[0:x1]))
-    depthstackmax2=np.nanmax(np.abs(depthstack[x2:]))/np.nanmax(np.abs(depthstack[0:x1]))
-
-    if dcorr:
-        depthstackcorr=depthstackcorr/nancount
-        depthstackcorrnorm=depthstackcorr.copy()   
-        depthstackcorrnorm[0:x1]=depthstackcorr[0:x1]/np.nanmax(np.abs(depthstackcorr[0:x1]))
-        depthstackcorrnorm[x1:x2]=depthstackcorr[x1:x2]/np.nanmax(np.abs(depthstackcorr[x1:x2]))
-        depthstackcorrnorm[x2:-1]=depthstackcorr[x2:-1]/np.nanmax(np.abs(depthstackcorr[x2:-1])) 
-
-    # take RF out of slowness stack
-    xx,yy=np.meshgrid(time,slow)
-    RF_timestack=interpolate.griddata((xx.ravel(),yy.ravel()),slowstack.ravel(),(timespace,slowness(timespace)),method='cubic')
-    RF_timestacknorm=interpolate.griddata((xx.ravel(),yy.ravel()),slowstacknorm.ravel(),(timespace,slowness(timespace)),method='cubic')
-    t1=int(np.argmin(np.abs(timespace-(10.))))
-    t2=int(np.argmin(np.abs(timespace-(30.))))
-    RF_timestacknorm= RF_timestack.copy()
-
-    RF_timestacknorm[0:t1]=RF_timestacknorm[0:t1]/np.max(np.abs(RF_timestack[0:t1]))
-    RF_timestacknorm[t1:t2]=RF_timestacknorm[t1:t2]/np.max(np.abs(RF_timestack[t1:t2]))
-    RF_timestacknorm[t2:-1]=RF_timestacknorm[t2:-1]/np.max(np.abs(RF_timestack[t2:-1]))
-    timestackmax1=np.max(np.abs(RF_timestack[t1:t2]))/np.max(np.abs(RF_timestack[0:t1]))
-    timestackmax2=np.max(np.abs(RF_timestack[t2:-1]))/np.max(np.abs(RF_timestack[0:t1]))
-    
-    RF_depthstack=interpolate.griddata(depths(timespace),RF_timestack,depthsspace)
-    RF_depthstacknorm=interpolate.griddata(depths(timespace),RF_timestacknorm,depthsspace)
-
-    c=0
-
-
-
-    # calculate errors to stacks   
-    for i in range(len(stalist)): #range(cat.count()):
-        print('calculating errors', i,stalist[i])
-        if os.path.isfile(stalist[i]):
-            seis=read(stalist[i],format='PICKLE')
-            if comp=='rff1':
-                ref=seis[0].rff1
-            elif comp=='rff2':
-                ref=seis[0].rff2
-            elif comp=='jgf1':
-                ref=seis[0].jgf1
-            elif comp=='jgf2':
-                ref=seis[0].jgf2
-            RF.data= np.real(ref['iterativedeconvolution'])
- 
-            indm=np.argmax(np.abs(RF.data[200:260])) +200
-            RF.data=RF.data/np.max(np.abs(RF.data))
-            RFdepth=interpolate.griddata(seis[0].conversions['prem']['depthsfortime'],RF.data,depthsspace)
-            RFtmp=np.zeros(int((len(RF.data)+2.*20./dt),))
-
-            RF.taper(max_percentage=0.05, type='cosine')
-            b=int(20/dt-indm+25/dt)
-            if np.mean(RF.data[indm-10:indm+10])<0.:
-                RF.data=RF.data*-1.
-            RFtmp[b:b+len(RF.data)]= RF.data/np.max(np.abs(RF.data))
-
-            b=int(20/dt-indm+25/dt)
-            RFtmp[b:b+len(RF.data)]= RF.data/np.max(np.abs(RF.data))
-            RFtmpnorm=RFtmp.copy()
-            int35=int(35./dt)
-            int55=int(55./dt)
-            RFtmpnorm[0:int35]= RFtmpnorm[0:int35]/np.max(RFtmp[0:int35])
-            RFtmpnorm[int35:int55]= RFtmpnorm[int35:int55]/np.max(RFtmp[int35:int55])
-            RFtmpnorm[int55:-1]= RFtmpnorm[int55:-1]/np.max(RFtmp[int55:-1])
-
-
-
-            if c==0:
-                sigma_depth=np.zeros(len(depthstack),)
-            sigma_depth=sigma_depth+np.square(RFdepth-depthstack)
-
-
-            if (c==0):
-                sigma_slowstack=np.zeros((len(slow),len(RF.data)))   
-            for s in range(len(slow)):
-                timeshift=int(round((65.-dist)*slow[s]/dt))
-                try:
-                    sigma_slowstack[s,:]=sigma_slowstack[s,:]+np.square(RFtmp[20/dt-timeshift:20/dt-timeshift+np.shape(sigma_slowstack)[1]]-slowstack[s,:])
-
-                except:
-                    pass
-            if dcorr:
-                if c==0:
-                    sigma_depthcorr=np.zeros(len(depthstack),)
-                RFdepthcorr=interpolate.griddata(seis[0].conversions[dcorr]['depthsfortime'],RF.data,depthsspace)
-                sigma_depthcorr=sigma_depthcorr+np.square(RFdepthcorr-depthstack)
-            c=c+1
-
-    #normalize and interpolate along slowness prediction
-    sigma_slowstack=np.sqrt(sigma_slowstack/(c*(c-1)))
-    sigma_slowstacknorm=sigma_slowstack.copy()
-    int35=int(35./dt)
-    int55=int(55./dt)
-    int110=int(110./dt)
-    sigma_slowstacknorm[:,0:int35]=sigma_slowstacknorm[:,0:int35]/np.max(np.abs(slowstack[:,0:int35]))
-    sigma_slowstacknorm[:,int35:int55]=sigma_slowstacknorm[:,int35:int55]/np.max(np.abs(slowstack[:,int35:int55]))
-    sigma_slowstacknorm[:,int55:int110]=sigma_slowstacknorm[:,int55:int110]/np.max(np.abs(slowstack[:,int55:int110]))
-    sigma_slowstacknorm[:,int110:-1]=sigma_slowstacknorm[:,int110:-1]/np.max(np.abs(slowstack[:,int110:-1])) 
-    sigma_timestack=interpolate.griddata((xx.ravel(),yy.ravel()),sigma_slowstack.ravel(),(timespace,slowness(timespace)),method='cubic')
-    #sigma_timestack_norm=interpolate.griddata((xx.ravel(),yy.ravel()),sigma_slowstacknorm.ravel(),(timespace,slowness(timespace)),method='cubic')
-    sigma_timestack_norm=sigma_timestack.copy()
-    sigma_timestack_norm[0:t1]=sigma_timestack_norm[0:t1]/np.max(np.abs(RF_timestack[0:t1]))
-    sigma_timestack_norm[t1:t2]=sigma_timestack_norm[t1:t2]/np.max(np.abs(RF_timestack[t1:t2]))
-    sigma_timestack_norm[t2:-1]=sigma_timestack_norm[t2:-1]/np.max(np.abs(RF_timestack[t2:-1]))
-  
-
-    if dcorr is not None:
-        sigma_depthcorr=np.sqrt(sigma_depthcorr/(c*(c-1)))
-        sigma_depthcorr_norm=sigma_depthcorr.copy()
-        sigma_depthcorr_norm[0:x1]=sigma_depthcorr_norm[0:x1]/np.max(np.abs(depthstackcorr[0:x1]))
-        sigma_depthcorr_norm[x1:x2]=sigma_depthcorr_norm[x1:x2]/np.max(np.abs(depthstackcorr[x1:x2]))
-        sigma_depthcorr_norm[x2:-1]=sigma_depthcorr_norm[x2:-1]/np.max(np.abs(depthstackcorr[x2:-1]))
-
-
-    sigma_depth=np.sqrt(sigma_depth/(c*(c-1)))
-
-    sigma_depth_norm=sigma_depth.copy()
-    sigma_depth_norm[0:x1]=sigma_depth_norm[0:x1]/np.max(np.abs(depthstack[0:x1]))
-    sigma_depth_norm[x1:x2]=sigma_depth_norm[x1:x2]/np.max(np.abs(depthstack[x1:x2]))
-    sigma_depth_norm[x2:-1]=sigma_depth_norm[x2:-1]/np.max(np.abs(depthstack[x2:-1]))
-
-
-    '''
-    plt.subplot(411)
-    #plt.xlabel('time(s) from 40s before P wave arrival')
-    plt.ylabel('distance(dg)')
-    plt.title(str(c)+ ' ' + fileout)
-    plt.ylim([35,95])
-    plt.xlim([-25,120.])
-
-    # plot backazimuth distibution
-    ax=f.add_axes([0.66, 0.65, 0.3, 0.14],projection='polar')
-    z = np.cos(np.radians(azimuths))
-    coll,counts = rosediagram.rose(azimuths, color_by='count', bins=18)
-    plt.xticks(np.radians(range(0, 360, 45)), 
-               ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])
-    try:
-        plt.rgrids(range(int(np.mean(counts)),int(max(counts)),int(np.mean(counts))), angle=290)
-    except:
-        print 'rose diagram failed'
-    '''
-
-    plt.subplot(411)
-    contour_levels = np.arange(-1.,1.01,.1)
-    cs3=plt.contourf(timeref,slow,slowstacknorm,contour_levels,rasterized=True, cmap='seismic',extend='both')#,extend='both')
-    #cs3.cmap.set_over(color=(0.5,0,0,1.))
-    #cs3.cmap.set_under(color=(0.0,0,0.5,1.))
-    plt.plot([10.,10.],[-0.7,.7],'k')
-    plt.plot([30.,30.],[-0.7,.7],'k')
-    #plt.plot([85.,85.],[-0.7,.3],'k')
-    plt.plot(reftimes[0]-reftimes[0],refslow[0]-refslow[0],'k',marker='+',markersize=10)
-    plt.plot(reftimes[3]-reftimes[0],refslow[3]-refslow[0],'k',marker='+',markersize=10)
-    plt.plot(reftimes[4]-reftimes[0],refslow[4]-refslow[0],'k',marker='+',markersize=10)
-    plt.plot(timespace,slowness(timespace),'k')
-
-    #plt.text(18.,0.2,str(round(slowstackmax1,2)))
-    #plt.text(60.,0.2,str(round(slowstackmax2,2)))
-    #plt.text(110.,0.2,str(round(slowstackmax3,2)))
-    plt.ylim([-0.7,.7])
-    plt.xlim([-10,120.])
-    #plt.colorbar()
-    plt.xlabel('time (s) w.r.t. P')
-    plt.ylabel('differential slowness (s/deg)')
-
-    plt.subplot(412)
-    contour_levels = np.arange(-1.,1.01,.1)
-    cs3=plt.contourf(timeref,slow,2.*slowstacknorm,contour_levels,extend='both',rasterized=True, cmap='seismic')
-    cs3.cmap.set_over(color=(0.5,0,0,1.))
-    cs3.cmap.set_under(color=(0.0,0,0.5,1.))
-    plt.plot([10.,10.],[-0.7,.7],'k')
-    plt.plot([30.,30.],[-0.7,.7],'k')
-    #plt.plot([85.,85.],[-0.7,.3],'k')
-    plt.plot(reftimes[0]-reftimes[0],refslow[0]-refslow[0],'k',marker='+',markersize=10)
-    plt.plot(reftimes[3]-reftimes[0],refslow[3]-refslow[0],'k',marker='+',markersize=10)
-    plt.plot(reftimes[4]-reftimes[0],refslow[4]-refslow[0],'k',marker='+',markersize=10)
-    plt.plot(timespace,slowness(timespace),'k')
-
-    #plt.text(18.,0.2,str(round(slowstackmax1,2)))
-    #plt.text(60.,0.2,str(round(slowstackmax2,2)))
-    #plt.text(110.,0.2,str(round(slowstackmax3,2)))
-    plt.ylim([-0.7,.7])
-    plt.xlim([-10,120.])
-    #plt.colorbar()
-    plt.xlabel('time (s) w.r.t. P')
-    plt.ylabel('differential slowness (s/deg)')
-
-    plt.subplot(413)
-    plt.plot(timespace,RF_timestack,'g',label='normalized')
-    plt.plot(timespace,RF_timestacknorm,'b',label='normalized in sections')
-
-    plt.fill_between((timespace),RF_timestacknorm-2.*sigma_timestack_norm,RF_timestacknorm+2.*sigma_timestack_norm,color='b', alpha=0.3)
-
-    plt.xlim([-10,120.])
-    plt.ylim([-1.2,1.2])
-    plt.plot([10.,10.],[-1.2,1.2],'k')
-    plt.plot([30.,30.],[-1.2,1.2],'k')
-    plt.plot([-10,120],[0., 0.],'--k')
-    plt.plot(reftimes[0]-reftimes[0],[1.0],'k',marker='+',markersize=10)
-    plt.plot(reftimes[3]-reftimes[0],[1.0],'k',marker='+',markersize=10)
-    plt.plot(reftimes[4]-reftimes[0],[1.0],'k',marker='+',markersize=10)
-    plt.xlabel('time (s) w.r.t. P')
-    plt.legend(loc='lower right',prop={'size':8})
-    # convert time to depth
-    plt.subplot(414)
-    plt.plot(depths(timespace),RF_timestacknorm,'b', label= 'from slowness stack')
-    plt.fill_between(depths(timespace),RF_timestacknorm-2.*sigma_timestack_norm,RF_timestacknorm+2.*sigma_timestack_norm,color='b', alpha=0.3)
-    plt.plot(depthsspace,depthstacknorm,'r', label= 'stack of depth-converted RFs')
-
-    plt.fill_between(depthsspace,depthstacknorm-2.*sigma_depth_norm,depthstacknorm+2.*sigma_depth_norm,color='r', alpha=0.3)
-    if dcorr:
-            plt.plot(depthsspace,depthstackcorrnorm,'g', label= 'stack of 3D corr depth-converted RFs')
-            plt.fill_between(depthsspace,depthstackcorrnorm-2.*sigma_depthcorr_norm,depthstackcorrnorm+2.*sigma_depthcorr_norm,color='g', alpha=0.3)
-    plt.plot([depths(10.),depths(10.)],[-1.4,1.4],'k')
-    plt.plot([depths(30.),depths(30.)],[-1.4,1.4],'k')
-    plt.plot([-10,1500],[0., 0.],'--k')
-    plt.xlim([-10,1500.])
-    plt.ylim([-1.4,1.4])
-    plt.xlabel('depth (km)')
-    plt.legend(loc='lower right',prop={'size':8})
-
-    #plt.show()
-
-    plt.savefig(filefig)
-
-
-    # save stack
-    stack=dict()
-
-    stack['depthstack']=depthstack
-    stack['depthstack_norm']=depthstacknorm
-    stack['depthstack_axis']=depthsspace
-    stack['depthstack_sigma']=sigma_depth
-    stack['depthstack_sigma_norm']=sigma_depth_norm
-    if dcorr:
-        stack['depthstack_'+dcorr]=depthstackcorr
-        stack['depthstack_norm_'+dcorr]=depthstackcorrnorm
-        stack['depthstack_axis_'+dcorr]=depthsspace
-        stack['depthstack_sigma_'+dcorr]=sigma_depthcorr
-        stack['depthstack_sigma_norm_'+dcorr]=sigma_depthcorr_norm
-
-    stack['slowstack_time']=RF_timestack
-    stack['slowstack_depth']=RF_depthstack
-    stack['slowstack_time_norm']=RF_timestacknorm
-    stack['slowstack_depth_norm']=RF_depthstacknorm
-    stack['slowstack']=slowstack
-    stack['slowstack_norm']=slowstacknorm
-    stack['slowstack_timeaxis']=time
-    stack['slowstack_slowaxis']=slow
-    stack['slowstack_sigma']=sigma_slowstack
-    stack['slowstack_sigma_norm']=sigma_slowstacknorm
-    stack['slowstack_time_sigma']=sigma_timestack
-    stack['slowstack_time_sigma_norm']=sigma_timestack_norm    
-    #stack['latitude']=seis[0].stats['latitude']
-    #stack['longitude']=seis[0].stats['longitude']
-    stack['figure_filename']=filefig
-    stack['latitude']=stacklat
-    stack['longitude']=stacklon
-    stack['radius']=stackrad
-    stack['filter']=seis[0].jgf1['filter']
-    stack['filterconst']=seis[0].jgf1['filterconst']
-    #stack['fitmin']=fitmin
-    #stack['ampmax']=ampmax
-    stack['stacked_num']=c
-    stack['filelist']=stalist
-    # write out
-    with open(fileout,'wb') as handle:
-        pickle.dump(stack,handle)
-    plt.show()
- 
-
-
-
-##########################################################################################
-
-
-
-
-stalist = glob.glob('../Data/*/*PICKLE')
-
-compute_fromlist(stalist, 'test.pdf', 'test.PICKLE',0,0,0)
+#Define constraints
+depth = 410
+lat1 = 0.
+lon1 = -160.
+lat2 = lat1
+lon2 = -178.
+lat3 = -25.
+lon3 = lon2
+lat4 = lat3
+lon4 = lon1
 
+box = Polygon([(lat1,lon1),(lat2,lon2),(lat3,lon3),(lat4,lon4)])
+#Set some values
+filts = "jgf1"
 
+#Make directory for outputs
+savepath='../Slowness_Stacks'
+if not os.path.exists(savedir):
+    os.makedirs(savedir)
+
+#-------------------------------Loop through events---------------------------------------
+
+direcs = glob.glob('../Data/*')
+stalist = []
+
+#Make list of all events
+for direc in direcs:
+    print(direc)
+    elif os.path.isfile(direc + '/selected_RFs_' + filt + '.dat'):
+        with open(direc + '/selected_RFs_' + filt + '.dat') as a:
+            starfs = a.read().splitlines()
+            for line in starfs:
+                stalist.append(line)
+
+#Set up checking counts and event lists
+count_yes = 0
+count_no = 0
+c = 0
+
+#Loop through events
+for i in range(len(stalist)):
+
+
+    print (stalist[i])
+    c = c +1
+    print (c)
+
+    #Read in the file
+    seis = read(stalist[i], format = 'PICKLE')
+    RF = getattr(seis[0],filt)
+
+    #--------Constrain for epicentral distance and pierce point lat/lon-----------
+
+    #Extract epicentral distance of trace
+    epi_RF = seis[0].stats['dist']
+
+    #Make RFs the same length
+    while len(RF['iterativedeconvolution']) < 1751:
+        RF['iterativedeconvolution'] = np.append(RF['iterativedeconvolution'],0)
+        RF['time'] = np.append(RF['time'],RF['time'][-1]+0.1)
+
+    #Extract pierce point lat/lon for Pds at depth, d
+    trace_pierce = seis[0].stats['piercepoints']['P'+str(depth)+'s'][str(depth)]
+
+    #Define lat and lon
+    latpp = float(trace_pierce[1])
+    lonpp = float(trace_pierce[2])
+
+    #Make the few positive (east) lon degrees an extension of negative
+    if lonpp >= 0:
+        lonpp = lonpp - 360
+
+    #Make Shapely points
+    point = Point(float(trace_pierce[1]), float(trace_pierce[2]))
+
+    #Check whether event has epicentral distance and piercepoint lat,lon needed
+    if epimin <= epi_RF <= epimax:
+        if box.contains(point):
+            print ('yes')
+            count_yes = count_yes + 1
+
+
+            #--------------------Make an array of slowness----------------
+
+            #List values between -1.00 and +1.00 in steps of 0.01 - slowness in s/deg
+
+            #Make a vector of integers for the slowness
+            slow_int = range(-100,101,1)
+
+            #Divide the integers to get the exact slowness values
+            slow = [x / 100. for x in slow_int]
+            #print(len(slow))
+
+            #Loop through each slowness value
+            for j in slow_int:
+                s = slow[j]
+
+                #Shift the epicentral distance in relation to the reference
+                epi_dist = epi_RF - epi_ref
+
+                #Calculate delta t (timeshift)
+                timeshift = s * epi_dist
+
+
+                #--------Convert the RF into the right format--------------
+
+                #Extract the amplitude of the RF
+                RF_amp = getattr(seis[0],filt)['iterativedeconvolution']
+
+                #Create line of zeros length of 40s on either side of the RF (so shifted traces can be stacked)
+                #40s either side is  80/float(seis[0].stats['delta']), so 80/sampling time (0.1s)
+                RFtemp = np.zeros(len(getattr(seis[0],filt)['iterativedeconvolution'])+int(80./float(seis[0].stats['delta'])))
+
+                #Take the middle section of 0s of RFtemp and make it equal to RF_amp
+                RFtemp[int(40/float(seis[0].stats['delta'])):int(40/float(seis[0].stats['delta']))+len(getattr(seis[0],filt)['iterativedeconvolution'])] = RF_amp
+
+
+                #--------Set up slowness stack-------------------------
+
+                #Set up timeshift of sample
+                timeshift_sample = int(timeshift/float(seis[0].stats['delta']))
+
+                #Add the timeshifted RF to the stack
+                STACK[j,:] = STACK[j,:] + RFtemp[int(40/float(seis[0].stats['delta']) + timeshift_sample) : int(40/float(seis[0].stats['delta'])) + timeshift_sample + len(getattr(seis[0],filt)['iterativedeconvolution'])]
+
+
+        #Add to count if not in bounds for lat/lon
+        else:
+            print ('no')
+            count_no = count_no + 1
+
+    #Add to count if not in bounds for epicentral distance
+    else:
+        print ('no')
+        count_no = count_no + 1
+
+
+#------------------Standard Error Calculation--------------------------
+
+#Reset Counter
+c = 0
+
+#Find average of STACK
+STACK = STACK / count_yes
+
+#Set up blank error stack
+STACK_ERR = np.zeros([201,1751])
+
+#Loop through events
+for i in range(len(stalist)):
+    seis = read(stalist[i], format = 'PICKLE')
+    RF = getattr(seis[0],filt)
+    print (stalist[i])
+    c = c +1
+    print (c)
+
+    #--------Constrain for epicentral distance and pierce point lat/lon-----------
+
+    #Make RFs the same length
+    while len(RF['iterativedeconvolution']) < 1751:
+        RF['iterativedeconvolution'] = np.append(RF['iterativedeconvolution'],0)
+        RF['time'] = np.append(RF['time'],RF['time'][-1]+0.1)
+
+    #Extract epicentral distance of trace
+    epi_RF = seis[0].stats['dist']
+
+    #Extract pierce point lat/lon for Pds at depth, d
+    trace_pierce = seis[0].stats['piercepoints']['P'+str(depth)+'s'][str(depth)]
+
+    #Define lat and lon
+    latpp = float(trace_pierce[1])
+    lonpp = float(trace_pierce[2])
+
+    #Make the few positive (east) lon degrees an extension of negative
+    if lonpp >= 0:
+        lonpp = lonpp - 360
+
+    #Make Shapely points
+    point = Point(float(trace_pierce[1]), float(trace_pierce[2]))
+
+    #Check whether event has epicentral distance and piercepoint lat,lon needed
+    if epimin <= epi_RF <= epimax:
+        if box.contains(point):
+            print ('yes')
+
+            #--------------------Make an array of slowness----------------
+
+            #List values between -1.00 and +1.00 in steps of 0.01 - slowness in s/deg
+
+            #Make a vector of integers for the slowness
+            slow_int = range(-100,101,1)
+
+            #Divide the integers to get the exact slowness values
+            slow = [x / 100. for x in slow_int]
+
+            #Loop through each slowness value
+            for j in slow_int:
+                s = slow[j]
+
+                #Shift the epicentral distance in relation to the reference
+                epi_dist = epi_RF - epi_ref
+
+                #Calculate delta t (timeshift)
+                timeshift = s * epi_dist
+
+
+                #--------Convert the RF into the right format--------------
+
+                #Extract the amplitude of the RF
+                RF_amp = getattr(seis[0],filt)['iterativedeconvolution']
+
+                #Create line of zeros length of 40s on either side of the RF (so shifted traces can be stacked)
+                #40s either side is  80/float(seis[0].stats['delta']), so 80/sampling time (0.1s)
+                RFtemp = np.zeros(len(getattr(seis[0],filt)['iterativedeconvolution'])+int(80/float(seis[0].stats['delta'])))
+
+                #Take the middle section of 0s of RFtemp and make it equal to RF_amp
+                RFtemp[int(40/float(seis[0].stats['delta'])):int(40/float(seis[0].stats['delta']))+len(getattr(seis[0],filt)['iterativedeconvolution'])] = RF_amp
+
+
+                #--------Set up slowness stack-------------------------
+
+                #Set up timeshift of sample
+                timeshift_sample = int(timeshift/float(seis[0].stats['delta']))
+
+                #Find timeshifted RF
+                RF_timeshift = RFtemp[int(40/float(seis[0].stats['delta'])) + timeshift_sample : int(40/float(seis[0].stats['delta'])) + timeshift_sample + len(getattr(seis[0],filt)['iterativedeconvolution'])]
+
+                #Find deviation from the mean and add to error stack
+                STACK_ERR[j,:] = STACK_ERR[j,:] + ((STACK[j,:] - RF_timeshift)**2)
+
+print(count_yes)
+
+#Find the standard deviation by dividing by the sample number and square root
+SD = np.sqrt(STACK_ERR/(count_yes-1))
+
+#Find the standard error by dividing the SD by the square root of the sample size
+SE = SD/(np.sqrt(count_yes))
+
+#Extract time axis
+time=getattr(seis[0],filt)['time']
+
+
+
+#-----------------Create Stack only within errors-------------
+
+#Create copy of STACK
+STACK2 = STACK.copy()
+
+#Loop
+for c in range(201):
+    for d in range(1751):
+        if STACK2[c,d] > 0:
+            STACK2[c,d] = STACK2[c,d] - 2*SE[c,d]
+            if STACK2[c,d] < 0:
+                STACK2[c,d] = 0
+        elif STACK2[c,d] < 0:
+            STACK2[c,d] = STACK2[c,d] + 2*SE[c,d]
+            if STACK2[c,d] > 0:
+                STACK2[c,d] = 0
+
+
+
+#-------------Do the same for this plot--------------
+
+#Normalisation value
+NORMALIZATION =  1.2
+
+#Find highest value of the STACK and make this 1
+STACK2 = STACK2 / np.max(np.abs(STACK2))
+
+#This will bring out the smaller Pds phases that have a smaller amplitude
+STACK2 = STACK2/NORMALIZATION
+
+#Print checks
+print (count_yes)
+print (count_no)
+
+#Set size of image
+fig = plt.figure(figsize=(12,4))
+
+
+#---------------------Plot Predicted Travel Times and Slowness of converted phases-----------------
+
+#Read in the predicted travel time and slowness differences from the appropriate file
+data = np.genfromtxt('/raid1/sdp43/turfpy/Travel_Times_Slowness/TTS_Pds_'+str(epi_ref)+'.dat', delimiter='\t')
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[:,1]
+y = data[:,2]
+
+#Plot the curves on the stack
+plt.plot(x,y)
+
+
+#---------------------Plot Predicted Travel Times and Slowness of PPvdp-----------------
+
+#Read in the predicted travel time and slowness differences from the appropriate file
+data = np.genfromtxt('/raid1/sdp43/turfpy/Travel_Times_Slowness/TTS_PPvdp_'+str(epi_ref)+'.dat', delimiter='\t')
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[:,1]
+y = data[:,2]
+
+#Plot the curves on the stack
+plt.plot(x,y)
+#plt.annotate('PPvdp',xy=(130,0.63))
+
+
+#---------------------Plot Predicted Travel Times and Slowness of PPvds-----------------
+
+#Read in the predicted travel time and slowness differences from the appropriate file
+data = np.genfromtxt('/raid1/sdp43/turfpy/Travel_Times_Slowness/TTS_PPvds_'+str(epi_ref)+'.dat', delimiter='\t')
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[:,1]
+y = data[:,2]
+
+#Plot the curves on the stack
+plt.plot(x,y)
+#plt.annotate('PPvds',xy=(137,0.17))
+
+
+#---------------------Plot Predicted points for discontinuities-----------------
+
+#Read in the predicted travel time and slowness differences from the appropriate file
+data = np.genfromtxt('/raid1/sdp43/turfpy/Travel_Times_Slowness/TTS_Pds_'+str(epi_ref)+'.dat', delimiter='\t')
+
+#220km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[1,1]
+y = data[1,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#310km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[2,1]
+y = data[2,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#410km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[3,1]
+y = data[3,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#550km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[4,1]
+y = data[4,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#660km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[5,1]
+y = data[5,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#971km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[6,1]
+y = data[6,2]
+
+#1000km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[7,1]
+y = data[7,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#1071km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = data[8,1]
+y = data[8,2]
+
+#-----------------------PPvdp
+
+#Read in the predicted travel time and slowness differences from the appropriate file
+datap = np.genfromtxt('../Travel_Times_Slowness/TTS_PPvdp_'+str(epi_ref)+'.dat', delimiter='\t')
+#220km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datap[1,1]
+y = datap[1,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#310km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datap[2,1]
+y = datap[2,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#410km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datap[3,1]
+y = datap[3,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#550km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datap[4,1]
+y = datap[4,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#660km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datap[5,1]
+y = datap[5,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#-----------------------PPvds
+
+#Read in the predicted travel time and slowness differences from the appropriate file
+datas = np.genfromtxt('../Travel_Times_Slowness/TTS_PPvds_'+str(epi_ref)+'.dat', delimiter='\t')
+#220km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datas[1,1]
+y = datas[1,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#310km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datas[2,1]
+y = datas[2,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#410km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datas[3,1]
+y = datas[3,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#550km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datas[4,1]
+y = datas[4,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#660km
+
+#Get the travel time difference, set as x, and the slowness difference, set as y
+x = datas[5,1]
+y = datas[5,2]
+
+#Plot the curves on the stack
+plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
+
+#-----------------Plot the stack----------------------------
+
+#Plotting using contourf (time_axis (RF time), slowness_range, slowness_matrix, contour_levels , colourmap , extend (extend grid if data lies outside range))
+contour_levels = np.arange(-.3,.3,.02)  #(-1.,1.01,.1) (min,max,interval)
+cs = plt.contourf(time,slow,STACK2,contour_levels, cmap=plt.cm.seismic, extend="both")
+
+#Set axes limits
+plt.ylim(-0.8,0.8)
+plt.xlim(0,150)
+
+#Axes labels and title
+plt.ylabel ('Slowness (s/deg)')
+plt.xlabel ('Time (s)')
+plt.suptitle('Slowness Stack - Epicentral Ref. '+str(epi_ref)+' - '+str(depth)+'km - Filt '+str(filt)+' \n No. of RFs: '+str(count_yes)+' Lat/Lon '+'North '+'  Norm: '+str(NORMALIZATION))
+
+#Save figures
+plt.savefig(savepath+'/Figures/Slowness_'+str(filt)+'_'+str(count_yes)+'RFs'+'.pdf')
+plt.savefig(savepath+'/Figures/Slowness_'+str(filt)+'_'+str(count_yes)+'RFs'+'.png')
+
+#Show the plot
+plt.show()
+
+#-------------------------------Save stack as pickle file----------------------------
+
+outpickle=dict()
+outpickle['STACK']=STACK2
+outpickle['STACK_nonnorm']=STACK
+outpickle['STACK_SE']=SE
+outpickle['time']=time
+outpickle['slow']=slow
+outpickle['PP_depth']=depth
+outpickle['no_RFs']=count_yes
+outpickle['latmin']=latmin
+outpickle['latmax']=latmax
+outpickle['lonmin']=lonmin
+outpickle['lonmax']=lonmax
+outpickle['filter']=filt
+outpickle['NORMALIZATION']=NORMALIZATION
+
+output_file=str(savepath+'/Slowness_'+str(filt)+'_'+str(count_yes)+'RFs'+'.PICKLE')
+out_put_write=open(output_file,'wb')
+pickle.dump(outpickle, out_put_write)
+out_put_write.close

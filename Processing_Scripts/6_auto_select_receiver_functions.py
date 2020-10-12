@@ -17,7 +17,6 @@ from obspy import read
 from obspy.core import trace
 import os.path
 import glob
-import shutil
 import numpy as np
 
 # negative length of file name in characters +1
@@ -56,8 +55,8 @@ stadirs = sorted(glob.glob(direc + '/*'))
 
 for stadir in stadirs:
     # This is where selected data will be listed.
-    goodrffile = open(stadir + '/selected_RFs_jgf1.dat', 'w')
-    SNRrffile = open(stadir + '/SNR_selected_RFs_jgf1.dat', 'w')
+    goodrffile = open(stadir + '/selected_RFs_' + filt + '.dat', 'w')
+    SNRrffile = open(stadir + '/SNR_selected_RFs_' + filt + '.dat', 'w')
 
     stalist = sorted(glob.glob(stadir + '/*.PICKLE'))
 
@@ -80,11 +79,9 @@ for stadir in stadirs:
                 RF.data = np.real(findRF['iterativedeconvolution'])
                 RF.data = RF.data / np.max(np.abs(RF.data))
                 fitid = findRF['iterativedeconvolution_fit']
-#                print(fitid)
                 # Test if maximum value of the Receiver function is actually
                 # between 23 and 27 seconds from the P wave arriva
                 indm = np.argmax(np.abs(RF.data))
-#                print(indm)
                 withinrange = True if (indm > 230 and indm < 270) else False
                 if withinrange:
                     # If 60% of SV is recovered, and RF passes the peak test,
@@ -97,8 +94,8 @@ for stadir in stadirs:
                                 if np.max(np.abs(RF.data[indm + 200:-1])) > minamp:
                                     Ptime = seis[0].stats.traveltimes['P']  # set P arrival time
                                     Ptime = seis[0].stats.event.origins[0].time + Ptime
-                                    fmax=seis[0].stats['maxfreq']
-                                    fmin=seis[0].stats['minfreq']
+                                    fmax=findRF['maxfreq']
+                                    fmin=findRF['minfreq']
                                     
                                     # Sanne SNR measure                                   
                                     if Sanne:
@@ -135,7 +132,6 @@ for stadir in stadirs:
                                             # if file doesn't meet any of these
                                             # criteria - move to thrown out folder
                                         else:
-                                            shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                                             print("Station: " + stadir + ", Event: " + stalist[i] + ", Poor signal to noise" + '\n')
                                             print("Noisemeasure = " + str(Noisemeasure) + ", Noisemeasure2 = " + str(Noisemeasure2) + '\n')
                                             Noise += 1
@@ -182,7 +178,6 @@ for stadir in stadirs:
                                             # if file doesn't meet any of these
                                             # criteria - move to thrown out folder
                                         else:
-                                            shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                                             print("Station: " + stadir + ", Event: " + stalist[i] + ", Poor signal to noise" + '\n')
                                             print("SNR_V = " + str(SNR_V) + ", SNR_R = " + str(SNR_R) + '\n')
                                             Noise += 1
@@ -219,37 +214,30 @@ for stadir in stadirs:
                                             # if file doesn't meet any of these
                                             # criteria - move to thrown out folder
                                         else:
-                                            shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                                             print("Station: " + stadir + ", Event: " + stalist[i] + ", Poor signal to noise" + '\n')
                                             print("SNR_V = " + str(SNR_V) + ", SNR_R = " + str(SNR_R) + '\n')
                                             Noise += 1 
                                 else:
-                                    shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                                     print("Station: " + stadir + ", Event: " + stalist[i] + ", Peaks < 4% after P-wave" + '\n')
                                     print("Maximum amplitude after P: " + str(np.max(np.abs(RF.data[indm + 200:-1]))) + '\n')
                                     LowE += 1
                             else:
-                                shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                                 print("Station: " + stadir + ", Event: " + stalist[i] + ", Peaks > 70% after P-wave" + '\n')
                                 print("Maximum amplitude after P: " + str(np.max(np.abs(RF.data[indm + 40:indm + 1200]))) + '\n')
                                 AfterP += 1
                         else:
-                            shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                             print("Station: " + stadir + ", Event: " + stalist[i] + ", Peaks > 40% before P-wave" + '\n')
                             print("Maximum amplitude before P: " + str(np.max(np.abs(RF.data[0:indm - 40]))) + '\n')
                             BeforeP +=1
                     else:
-                        shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                         print("Station: " + stadir + ", Event: " + stalist[i] + ", Less than 60% fit" + '\n')
                         print("Percentage fit: " + str(fitid) + '\n')
                         Fit += 1                        
                 else:
-                    shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                     print("Station: " + stadir + ", Event: " + stalist[i] + ", P-wave not between 23 and 27 seconds" + '\n')
                     print("P arrival-time: " + str(indm) + '\n')
                     P_time +=1
             else:
-                shutil.move(stalist[i],rm_direc + stalist[i][file_char_len:])
                 print("Station: " + stadir + ", Event: " + stalist[i] + ", Not between 30-90deg " + '\n')
                 print("Dist: " + str(dist) + '\n')
                 Epi_dist +=1                    

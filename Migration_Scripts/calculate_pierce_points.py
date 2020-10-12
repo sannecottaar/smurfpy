@@ -6,29 +6,31 @@ and if not working them out, writing the data to sperate file and the PICKLE fil
 
 sys.argv[1] = Depth of piercepoints
 sys.argv[2] = Phase
+sys.argv[3] = Filter
 
-eg. Piercepoints_Calc.py 410 P410s
+eg. Piercepoints_Calc.py 410 P410s jgf1
 '''
 
 # Import all the relevant modules
-import obspy
 from obspy import read
-import matplotlib.pyplot as plt
-import os.path, sys, glob
-import numpy as np
-from subprocess import call
+import os, sys, glob
 import subprocess
 
 
 # Make and open a data file in the Piercepoints directory for this phase
 # and depth ('w' = writable)
-PP = open('PP_' + str(sys.argv[1]) + 'km_' + str(sys.argv[2]) + '.txt', 'w')
+PP = open('PP_' + str(sys.argv[1]) + 'km_' + str(sys.argv[2]) + '_' + str(sys.argv[3]) + '.txt', 'w')
 
 # Loop through stations
 direc = '../Data'
 stadirs = glob.glob(direc + '/*')
 for stadir in stadirs:
-    stalist = glob.glob(stadir + '/*PICKLE')
+    stalist = []
+    if os.path.isfile(stadir + '/selected_RFs_'+str(sys.argv[3])+'.dat'):
+        with open(stadir + '/selected_RFs_'+str(sys.argv[3])+'.dat') as a:
+            starfs = a.read().splitlines()
+            for line in starfs:
+                stalist.append(line)
 
     # Loop through events
     for s in range(len(stalist)):
@@ -88,7 +90,7 @@ for stadir in stadirs:
             t = out.split('\n')
 
             # Split the relevant line into strings
-            if EVDP < float(sys.argv[1]):
+            if EVDP <= float(sys.argv[1]):
                 u = t[2].split()
             else:
                 u = t[1].split()
@@ -107,10 +109,12 @@ for stadir in stadirs:
             seis.write(stalist[s], format='PICKLE')
 
             # Add line to opened output file followed by new line
-            PP.write(
-                "%f %f %f %f %f \n" %
-                (float(u[0]), float(u[1]), float(u[2]), float(u[3]), float(u[4])))
+            PP.write(str(float(u[1])) + ' ' + str(float(u[3])) + ' ' + str(float(u[4])) + '\n')
 
+        else:
+            PP.write(seis[0].stats.piercepoints[sys.argv[2]][sys.argv[1]][0] + ' ' + \
+            seis[0].stats.piercepoints[sys.argv[2]][sys.argv[1]][1] + ' ' + \
+            seis[0].stats.piercepoints[sys.argv[2]][sys.argv[1]][2] + '\n')
 
 # Close the file you are writing to
 PP.close()

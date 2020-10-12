@@ -15,26 +15,17 @@ For PREM conversions use Migration_Scripts/convert_to_depth_obspy.py
 #--------------------------Set Up----------------------
 
 #Import all the relevant modules
-import obspy
 from obspy import read
-from obspy.core import Stream
-from obspy.core import trace
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import os.path
-import time
 import glob
-import shutil
 import numpy as np
-from obspy import UTCDateTime
-import subprocess
 import pickle
-import sys
 from scipy import interpolate
-
+from shapely.geometry import Point, Polygon
+import matplotlib.pylab as pylab
 
 #Set figure parameters
-import matplotlib.pylab as pylab
 params = {'legend.fontsize': 'x-large',
           'figure.figsize': (8,10),
          'axes.labelsize': 'x-large',
@@ -43,29 +34,44 @@ params = {'legend.fontsize': 'x-large',
          'ytick.labelsize':'x-large'}
 pylab.rcParams.update(params)
 
-#Create depth stack
-depth_space = np.linspace(0,1200,1201)
-STACK=np.zeros(len(depth_space))
-
 #Set some values
-direc = '../Data'
+direcs=glob.glob('../Data/*')
 filt = 'jgf1' # RF type to use
 conversion = 'prem' # Converstion to use
 
 norm_depth = 150 # depth beyond which to normalize
 norm_fact = 0.2 # Normalization factor
 
-savepath='./'
+#Make directories for outputs
+savedir='../Depth_Stacks/'
+if not os.path.exists(savedir):
+    os.makedirs(savedir)
+savepath=savedir+conversion
+if not os.path.exists(savepath):
+    os.makedirs(savepath)
 
 #Define constraints
 dp = 410
-latmin = -25
-latmax = 0
-lonmin = -178
-lonmax = -160
+lat1 = 0.
+lon1 = -160.
+lat2 = lat1
+lon2 = -178.
+lat3 = -25.
+lon3 = lon2
+lat4 = lat3
+lon4 = lon1
+
+box = Polygon([(lat1,lon1),(lat2,lon2),(lat3,lon3),(lat4,lon4)])
 
 #Make list of all events
-stalist = glob.glob(direc+'*/*/*.PICKLE')
+stalist = []
+for direc in direcs:
+    print(direc)
+    if os.path.isfile(direc + '/selected_RFs_' + filt + '.dat'):
+        with open(direc + '/selected_RFs_' + filt + '.dat') as a:
+            starfs = a.read().splitlines()
+            for line in starfs:
+                stalist.append(line)
 
 #Set up checking counts and event lists
 count_yes = 0
@@ -85,6 +91,12 @@ for s in range(len(stalist)):
     #Read in the file
     seis = read(stalist[s],format='PICKLE')
     RF = getattr(seis[0],filt)
+	
+    #Make all RFs of same length
+    while len(RF['iterativedeconvolution']) < 1751:
+        RF['iterativedeconvolution'] = np.append(RF['iterativedeconvolution'],0)
+        RF['time'] = np.append(RF['time'],RF['time'][-1]+0.1)
+        seis[0].conversions[conversion]['depthsfortime'] = np.append(seis[0].conversions[conversion]['depthsfortime'],1200.)
     
     #Extract the pierce points
     trace_pierce = seis[0].stats['piercepoints']['P'+str(dp)+'s'][str(dp)]
@@ -98,21 +110,31 @@ for s in range(len(stalist)):
     if lonpp >= 0:
         lonpp = lonpp - 360
 
+    #Make Shapely points
+    point = Point(float(trace_pierce[1]), float(trace_pierce[2]))
+
     #Check whether event pierce points located within bounds of regions
-    if (latmin <= latpp <= latmax) and (lonmin <= lonpp <= lonmax):
+    if box.contains(point):
         print ('yes')
 
         #Add to list and count
         List_yes.append(stalist[s])
         count_yes = count_yes + 1
+	
+	if count_yes <= 1:
+            #Create depth stack
+            start_depth = seis[0].conversions[conversion]['depths'][0]
+            stop_depth = 1200
+            step = (stop_depth - start_depth) + 1
+            depth_space = np.linspace(start_depth,stop_depth,step)
+            STACK=np.zeros(len(depth_space))
 
+        start_depth = seis[0].conversions[conversion]['depths'][0]
+        stop_depth = seis[0].conversions[conversion]['depths'][-1]
 
-    
         # for larger data sets, we should consider writing out the interpolated values...
         interp = interpolate.interp1d(seis[0].conversions[conversion]['depthsfortime'],RF['iterativedeconvolution'] )
         RFdata_depth = interp(depth_space)
-            
-
 
         #Add this amplitude to the stack
         STACK[:] = STACK[:] + RFdata_depth[:]
@@ -150,7 +172,14 @@ for s in range(len(stalist)):
     lonpp = float(trace_pierce[2])
     if lonpp >= 0:
         lonpp = lonpp - 360
-    if (latmin <= latpp <= latmax) and (lonmin <= lonpp <= lonmax):
+    #Make Shapely points
+    point = Point(float(trace_pierce[1]), float(trace_pierce[2]))
+	
+    #Make all RFs of smae length
+    while len(seis[0].conversions[conversion]['depthsfortime']) < 1751:
+        seis[0].conversions[conversion]['depthsfortime'] = np.append(seis[0].conversions[conversion]['depthsfortime'],1200.)
+
+    if box.contains(point):
         print ('yes')
 
         interp = interpolate.interp1d(seis[0].conversions[conversion]['depthsfortime'],RF['iterativedeconvolution'])
@@ -158,7 +187,6 @@ for s in range(len(stalist)):
 
         amp = RFdata_depth
  
-	
         #Find deviation from the mean
         dev = amp_rel[:] - amp[:]
         
@@ -181,11 +209,6 @@ SE = SD/(np.sqrt(count_yes))
 #Normalise max value (direct P) to 1
 amp_rel[:]=amp_rel[:]/(np.nanmax(np.abs(amp_rel[:])))
 
-#Attempts to find peaks automatically
-#import scipy
-#from scipy import signal
-#scipy.signal.find_peaks_cwt(amp_rel, np.arange(1,100))
-
 #Add and subtract SE from amp_rel to show spread of error
 amp_rel_1SE_P = amp_rel[:] + SE
 amp_rel_1SE_N = amp_rel[:] - SE
@@ -206,8 +229,6 @@ amp_rel_2SE_N[int_depth:-1]=amp_rel_2SE_N[int_depth:-1]/norm_fact
 
 
 #Print checks
-#print (List_yes)
-#print (List_no)
 print (count_yes)
 print (count_no)
 
@@ -253,8 +274,6 @@ plt.savefig(savepath+'/Depth_Stack_'+str(filt)+'_'+str(conversion)+'_'+str(count
 plt.show()
 
 #-------------------------------Save stack as pickle file----------------------------
-
-#epi_range,time,STACK_NEW,counter
 
 outpickle=dict()
 outpickle['depth']=depth
