@@ -9,8 +9,13 @@ import glob
 import sys
 from obspy.taup import TauPyModel
 
-# Loads PREM model
-model = TauPyModel(model="prem")
+PREM=True
+ak135=False
+# Loads PREM or ak135 model
+if PREM:
+        model = TauPyModel(model="prem")
+if ak135:
+        model = TauPyModel(model='../Tools/MODELS/ak135_FILES/ak135_added_discon_taup.npz')
 
 # Find list of stations directories
 stations = glob.glob('../Data/*')
@@ -18,7 +23,7 @@ stations = glob.glob('../Data/*')
 # Add phase names as additional arguments (these are the TauP phase names)
 phase = []
 for i in range(1, len(sys.argv)):
-    phase.append(sys.argv[i])
+        phase.append(sys.argv[i])
 count = 0
 # Loop through stations
 for stadir in stations:

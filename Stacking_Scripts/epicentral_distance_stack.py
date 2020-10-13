@@ -22,7 +22,7 @@ The script will ask for various inputs:
 from obspy import read
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import glob
+import glob,os
 import numpy as np
 from shapely.geometry import Point, Polygon
 from matplotlib import gridspec
@@ -241,7 +241,7 @@ if plot_travel_time_curves:
         # Read in the predicted travel time differences from the appropriate
         # file
         data = np.genfromtxt(
-    '../Input/Moveout_with_epicentral_distance/TT_'+str(phases[t])+'.dat')
+    '../Tools/Moveout_with_epicentral_distance/TT_'+str(phases[t])+'.dat')
 
         # Get the epicentral distance, set as x, and the travel time
         # differences, set as y
@@ -314,10 +314,10 @@ plt.suptitle(
     'Epicentral Distance Stack - '+str(
         depth)+'km - No. of RFs: '+str(
             count_yes)+' \n Lat/Lon '+str(
-                latmin)+'/'+str(
-                    latmax)+'/'+str(
-                        lonmin)+'/'+str(
-                            lonmax)+' - Bin Size: '+str(
+                lat1)+'/'+str(
+                    lat3)+'/'+str(
+                        lon1)+'/'+str(
+                            lon2)+' - Bin Size: '+str(
                                 bin_size)+' - '+str(
                                     Smooth))
 

@@ -17,6 +17,7 @@ from matplotlib import gridspec
 from scipy.signal import find_peaks
 import compute_conversions
 import matplotlib.pylab as pylab
+import os
 
 #Set figure parameters
 params = {'legend.fontsize': 'x-large',
@@ -187,7 +188,7 @@ for num in range(len(num_rfs)):
     #---------------------Plot Predicted Travel Times and Slowness of converted phases-----------------
     #
 
-    lines= compute_conversions.compute_arrivals()
+    lines= compute_conversions.compute_arrivals(conversion=conversion)
 
     plt.plot(lines[0][1] ,lines[0][2],'k-', linewidth=2,label='conversion Pds')
 
@@ -198,16 +199,16 @@ for num in range(len(num_rfs)):
     #Plot locations of peaks in depth stack on slowness stacks
     #arr[0][] = Pds, arr[1][] = PSvds, arr[2][]= PPvds
     if isreal:
-        arr1 = compute_conversions.compute_arrivals_one_depth(d1)
+        arr1 = compute_conversions.compute_arrivals_one_depth(d1,conversion=conversion)
         plt.plot(arr1[0][1], arr1[0][2], marker="s", color='orange', markersize=12, markeredgewidth=1.6)
         #plt.plot(arr1[1][1], arr1[1][2], marker="s", color='orange', markersize=12, markeredgewidth=1.6)
         plt.plot(arr1[2][1], arr1[2][2], marker="s", color='orange', markersize=12, markeredgewidth=1.6)
 
-    arr2 = compute_conversions.compute_arrivals_one_depth(d2)
+    arr2 = compute_conversions.compute_arrivals_one_depth(d2,conversion=conversion)
     plt.plot(arr2[0][1], arr2[0][2], marker="o", color='green', markersize=12, markeredgewidth=1.6)
     #plt.plot(arr2[1][1], arr2[1][2], marker="o", color='green', markersize=12, markeredgewidth=1.6)
     plt.plot(arr2[2][1], arr2[2][2], marker="o", color='green', markersize=12, markeredgewidth=1.6)
-    arr3 = compute_conversions.compute_arrivals_one_depth(d3)
+    arr3 = compute_conversions.compute_arrivals_one_depth(d3,conversion=conversion)
     plt.plot(arr3[0][1], arr3[0][2], marker="^", color='purple', markersize=12, markeredgewidth=1.6)
     #plt.plot(arr3[1][1], arr3[1][2], marker="^", color='purple', markersize=12, markeredgewidth=1.6)
     plt.plot(arr3[2][1], arr3[2][2], marker="^", color='purple', markersize=12, markeredgewidth=1.6)

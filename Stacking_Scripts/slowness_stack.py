@@ -44,7 +44,7 @@ lon4 = lon1
 
 box = Polygon([(lat1,lon1),(lat2,lon2),(lat3,lon3),(lat4,lon4)])
 #Set some values
-filts = "jgf1"
+filts = 'jgf1'
 
 #Make directory for outputs
 savepath='../Slowness_Stacks'
@@ -86,7 +86,7 @@ for i in range(len(stalist)):
 
     #Extract epicentral distance of trace
     epi_RF = seis[0].stats['dist']
-
+    stel = round(seis[0].stats['stel'],3) #  Use above ground staitons for simplicity.
     #Make RFs the same length
     while len(RF['iterativedeconvolution']) < 1751:
         RF['iterativedeconvolution'] = np.append(RF['iterativedeconvolution'],0)
@@ -107,7 +107,7 @@ for i in range(len(stalist)):
     point = Point(float(trace_pierce[1]), float(trace_pierce[2]))
 
     #Check whether event has epicentral distance and piercepoint lat,lon needed
-    if epimin <= epi_RF <= epimax:
+    if epimin <= epi_RF <= epimax and stel >= 0.0:
         if box.contains(point):
             print ('yes')
             count_yes = count_yes + 1
@@ -196,6 +196,7 @@ for i in range(len(stalist)):
 
     #Extract epicentral distance of trace
     epi_RF = seis[0].stats['dist']
+    stel = round(seis[0].stats['stel'],3) #  Use above ground staitons for simplicity.
 
     #Extract pierce point lat/lon for Pds at depth, d
     trace_pierce = seis[0].stats['piercepoints']['P'+str(depth)+'s'][str(depth)]
@@ -212,7 +213,7 @@ for i in range(len(stalist)):
     point = Point(float(trace_pierce[1]), float(trace_pierce[2]))
 
     #Check whether event has epicentral distance and piercepoint lat,lon needed
-    if epimin <= epi_RF <= epimax:
+    if epimin <= epi_RF <= epimax and stel >= 0.0:
         if box.contains(point):
             print ('yes')
 
@@ -315,7 +316,7 @@ fig = plt.figure(figsize=(12,4))
 #---------------------Plot Predicted Travel Times and Slowness of converted phases-----------------
 
 #Read in the predicted travel time and slowness differences from the appropriate file
-data = np.genfromtxt('/raid1/sdp43/turfpy/Travel_Times_Slowness/TTS_Pds_'+str(epi_ref)+'.dat', delimiter='\t')
+data = np.genfromtxt('../Tools/Travel_Times_Slowness/TTS_Pds_'+str(epi_ref)+'.dat', delimiter='\t')
 
 #Get the travel time difference, set as x, and the slowness difference, set as y
 x = data[:,1]
@@ -328,7 +329,7 @@ plt.plot(x,y)
 #---------------------Plot Predicted Travel Times and Slowness of PPvdp-----------------
 
 #Read in the predicted travel time and slowness differences from the appropriate file
-data = np.genfromtxt('/raid1/sdp43/turfpy/Travel_Times_Slowness/TTS_PPvdp_'+str(epi_ref)+'.dat', delimiter='\t')
+data = np.genfromtxt('../Tools/Travel_Times_Slowness/TTS_PPvdp_'+str(epi_ref)+'.dat', delimiter='\t')
 
 #Get the travel time difference, set as x, and the slowness difference, set as y
 x = data[:,1]
@@ -342,7 +343,7 @@ plt.plot(x,y)
 #---------------------Plot Predicted Travel Times and Slowness of PPvds-----------------
 
 #Read in the predicted travel time and slowness differences from the appropriate file
-data = np.genfromtxt('/raid1/sdp43/turfpy/Travel_Times_Slowness/TTS_PPvds_'+str(epi_ref)+'.dat', delimiter='\t')
+data = np.genfromtxt('../Tools/Travel_Times_Slowness/TTS_PPvds_'+str(epi_ref)+'.dat', delimiter='\t')
 
 #Get the travel time difference, set as x, and the slowness difference, set as y
 x = data[:,1]
@@ -356,7 +357,7 @@ plt.plot(x,y)
 #---------------------Plot Predicted points for discontinuities-----------------
 
 #Read in the predicted travel time and slowness differences from the appropriate file
-data = np.genfromtxt('/raid1/sdp43/turfpy/Travel_Times_Slowness/TTS_Pds_'+str(epi_ref)+'.dat', delimiter='\t')
+data = np.genfromtxt('../Tools/Travel_Times_Slowness/TTS_Pds_'+str(epi_ref)+'.dat', delimiter='\t')
 
 #220km
 
@@ -427,7 +428,7 @@ y = data[8,2]
 #-----------------------PPvdp
 
 #Read in the predicted travel time and slowness differences from the appropriate file
-datap = np.genfromtxt('../Travel_Times_Slowness/TTS_PPvdp_'+str(epi_ref)+'.dat', delimiter='\t')
+datap = np.genfromtxt('../Tools/Travel_Times_Slowness/TTS_PPvdp_'+str(epi_ref)+'.dat', delimiter='\t')
 #220km
 
 #Get the travel time difference, set as x, and the slowness difference, set as y
@@ -476,7 +477,7 @@ plt.plot(x,y, marker="x", color='black', markersize=8, markeredgewidth=1.6)
 #-----------------------PPvds
 
 #Read in the predicted travel time and slowness differences from the appropriate file
-datas = np.genfromtxt('../Travel_Times_Slowness/TTS_PPvds_'+str(epi_ref)+'.dat', delimiter='\t')
+datas = np.genfromtxt('../Tools/Travel_Times_Slowness/TTS_PPvds_'+str(epi_ref)+'.dat', delimiter='\t')
 #220km
 
 #Get the travel time difference, set as x, and the slowness difference, set as y
@@ -554,10 +555,10 @@ outpickle['time']=time
 outpickle['slow']=slow
 outpickle['PP_depth']=depth
 outpickle['no_RFs']=count_yes
-outpickle['latmin']=latmin
-outpickle['latmax']=latmax
-outpickle['lonmin']=lonmin
-outpickle['lonmax']=lonmax
+outpickle['latmin']=lat1
+outpickle['latmax']=lat3
+outpickle['lonmin']=lon1
+outpickle['lonmax']=lon2
 outpickle['filter']=filt
 outpickle['NORMALIZATION']=NORMALIZATION
 

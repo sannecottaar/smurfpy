@@ -18,8 +18,8 @@ import glob
 # Set file with pierce points
 depth = '410'   # depth of pierce points to plot
 phase = 'P410s' # phase of pierce points to plot 
-piercelist = ['../Migration_Scripts/PP_'+depth+'km_'+phase+'.txt']
-
+rffilter = 'jgf1'
+piercelist = ['../Migration_Scripts/PP_'+depth+'km_'+phase+'_'+rffilter+'.txt']
 
 # Read in pierce points
 lonpp = []

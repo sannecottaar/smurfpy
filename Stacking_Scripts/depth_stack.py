@@ -91,7 +91,8 @@ for s in range(len(stalist)):
     #Read in the file
     seis = read(stalist[s],format='PICKLE')
     RF = getattr(seis[0],filt)
-	
+    stel = round(seis[0].stats['stel'],3) #  Use above ground staitons for simplicity.
+
     #Make all RFs of same length
     while len(RF['iterativedeconvolution']) < 1751:
         RF['iterativedeconvolution'] = np.append(RF['iterativedeconvolution'],0)
@@ -114,20 +115,20 @@ for s in range(len(stalist)):
     point = Point(float(trace_pierce[1]), float(trace_pierce[2]))
 
     #Check whether event pierce points located within bounds of regions
-    if box.contains(point):
+    if box.contains(point) and stel >= 0.0:
         print ('yes')
 
         #Add to list and count
         List_yes.append(stalist[s])
         count_yes = count_yes + 1
 	
-	if count_yes <= 1:
-            #Create depth stack
-            start_depth = seis[0].conversions[conversion]['depths'][0]
-            stop_depth = 1200
-            step = (stop_depth - start_depth) + 1
-            depth_space = np.linspace(start_depth,stop_depth,step)
-            STACK=np.zeros(len(depth_space))
+    if count_yes <= 1:
+        #Create depth stack
+        start_depth = seis[0].conversions[conversion]['depths'][0]
+        stop_depth = 1200
+        step = (stop_depth - start_depth) + 1
+        depth_space = np.linspace(start_depth,stop_depth,step)
+        STACK=np.zeros(len(depth_space))
 
         start_depth = seis[0].conversions[conversion]['depths'][0]
         stop_depth = seis[0].conversions[conversion]['depths'][-1]
@@ -166,6 +167,8 @@ for s in range(len(stalist)):
     c = c +1
     print (c)
     seis = read(stalist[s],format='PICKLE')
+    stel = round(seis[0].stats['stel'],3) #  Use above ground staitons for simplicity.
+
     trace_pierce = seis[0].stats['piercepoints']['P'+str(dp)+'s'][str(dp)]
     print (trace_pierce)
     latpp = float(trace_pierce[1])
@@ -179,7 +182,7 @@ for s in range(len(stalist)):
     while len(seis[0].conversions[conversion]['depthsfortime']) < 1751:
         seis[0].conversions[conversion]['depthsfortime'] = np.append(seis[0].conversions[conversion]['depthsfortime'],1200.)
 
-    if box.contains(point):
+    if box.contains(point) and stel >= 0.0:
         print ('yes')
 
         interp = interpolate.interp1d(seis[0].conversions[conversion]['depthsfortime'],RF['iterativedeconvolution'])
@@ -264,11 +267,11 @@ plt.gca().invert_yaxis()
 plt.gca().tick_params(labelsize=16)
 
 #Make title of plot
-plt.suptitle('Depth Stack - PP: '+str(dp)+'km - No. of RFs: '+str(count_yes)+'\n Lat/Lon: '+str(latmin)+'/'+str(latmax)+'/'+str(lonmin)+'/'+str(lonmax)+'\n Filter: '+str(filt)+' Conversion: '+str(conversion))
+plt.suptitle('Depth Stack - PP: '+str(dp)+'km - No. of RFs: '+str(count_yes)+'\n Lat/Lon: '+str(lat1)+'/'+str(lat3)+'/'+str(lon1)+'/'+str(lon2)+'\n Filter: '+str(filt)+' Conversion: '+str(conversion))
 
 #Save figures
-plt.savefig(savepath +'/Depth_Stack_'+str(filt)+'_'+str(conversion)+'_'+str(count_yes)+'RFs_loc'+str(latmin)+'_'+str(latmax)+'_'+str(lonmin)+'_'+str(lonmax)+'.pdf')
-plt.savefig(savepath+'/Depth_Stack_'+str(filt)+'_'+str(conversion)+'_'+str(count_yes)+'RFs_loc'+str(latmin)+'_'+str(latmax)+'_'+str(lonmin)+'_'+str(lonmax)+'.png')
+plt.savefig(savepath +'/Depth_Stack_'+str(filt)+'_'+str(conversion)+'_'+str(count_yes)+'RFs_loc'+str(lat1)+'_'+str(lat3)+'_'+str(lon1)+'_'+str(lon2)+'.pdf')
+plt.savefig(savepath+'/Depth_Stack_'+str(filt)+'_'+str(conversion)+'_'+str(count_yes)+'RFs_loc'+str(lat1)+'_'+str(lat3)+'_'+str(lon1)+'_'+str(lon2)+'.png')
 
 #Show the plot
 plt.show()
@@ -284,14 +287,14 @@ outpickle['amp_rel_2SE_P']=amp_rel_2SE_P
 outpickle['amp_rel_2SE_N']=amp_rel_2SE_N
 outpickle['PP_depth']=dp
 outpickle['no_RFs']=count_yes
-outpickle['latmin']=latmin
-outpickle['latmax']=latmax
-outpickle['lonmin']=lonmin
-outpickle['lonmax']=lonmax
+outpickle['latmin']=lat1
+outpickle['latmax']=lat3
+outpickle['lonmin']=lon1
+outpickle['lonmax']=lon2
 outpickle['filter']=filt
 outpickle['conversion']=conversion
 
-output_file=str(savepath+'/Depth_Stack_'+str(filt)+'_'+str(conversion)+'_'+str(count_yes)+'RFs_loc'+str(latmin)+'_'+str(latmax)+'_'+str(lonmin)+'_'+str(lonmax)+'.PICKLE')
+output_file=str(savepath+'/Depth_Stack_'+str(filt)+'_'+str(conversion)+'_'+str(count_yes)+'RFs_loc'+str(lat1)+'_'+str(lat3)+'_'+str(lon1)+'_'+str(lon2)+'.PICKLE')
 out_put_write=open(output_file,'wb')
 pickle.dump(outpickle, out_put_write)
 out_put_write.close

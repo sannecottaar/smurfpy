@@ -6,7 +6,6 @@
 ##########################################################################
 
 import sys,os 
-sys.path.append('/raid2/sc845/Python/geographiclib-1.34/')
 from obspy import read
 from obspy.core import trace
 import os.path
@@ -15,13 +14,24 @@ import numpy as np
 import subprocess
 from obspy.taup import TauPyModel
 
+PREM=True
+ak135=False
+rffilter='jgf1'
 
-taupmodel = TauPyModel(model='./prem_added_discon_taup.npz')
+if PREM:
+    mod_1D='prem'
+    taupmodel = TauPyModel(model='../Tools/MODELS/PREM_FILES/prem_added_discon_taup.npz')
+elif ak135:
+    mod_1D='ak135'
+    #obspy.taup.taup_create.build_taup_model('./ak135_added_discon_taup.tvel','./ak135_added_discon_taup.npz')
+    taupmodel = TauPyModel(model='../Tools/MODELS/ak135_FILES/ak135_added_discon_taup.npz')
+
 
 def compute_onestation(dr,filter='jgf1'):
 
     # Loop through receiver functions in station directory
-    stalist=glob.glob(dr+'/*.PICKLE')
+    station_file = open(dr + '/selected_RFs_'+str(filter)+'.dat','r')
+    stalist=station_file.read().strip().split()
 
     # Loop through list
     for i in range(len(stalist)): 
@@ -49,9 +59,17 @@ def compute_onestation(dr,filter='jgf1'):
             refincident=[]
             refslow=[]
 
-            # Get slownesses and incident angles based on PREM using Taup in Obspy
-            phases =  ['P','Pms','P220s','P310s','P400s','P550s','P670s','P971s','P1171s']
-            phdepths = [0,24.4,220,310,400,550,670,971,1171]
+            
+            if PREM:
+                # Get slownesses and incident angles based on PREM using Taup in Obspy
+                phases =  ['P','Pms','P220s','P310s','P400s','P550s','P670s','P971s','P1171s']
+                phdepths = [0,24.4,220,310,400,550,670,971,1171]
+            if ak135:
+                # get slownesses and incident angles based on ak135 using Taup in Obspy
+                phases =  ['P','Pms','P210s','P410s','P660s','P1156s']
+                phdepths = [0,35,210,410,660,1156]
+
+
             for p,ph in enumerate(phases):
                 arr = taupmodel.get_travel_times(depth,dist,[ph])
                 if p ==0:
@@ -76,26 +94,31 @@ def compute_onestation(dr,filter='jgf1'):
             # Save solutions to dictionary
             if not hasattr(seis[0],'conversions'):
                 seis[0].conversions=dict()
-            seis[0].conversions['prem']=dict()
-            seis[0].conversions['prem']['depths']=depthspace
-            seis[0].conversions['prem']['takeoff']=takeoff(depthspace)
-            seis[0].conversions['prem']['slowness']=slowness(depthspace)
-            seis[0].conversions['prem']['time']=timepl(depthspace)
+            seis[0].conversions[str(mod_1D)]=dict()
+            seis[0].conversions[str(mod_1D)]['depths']=depthspace
+            seis[0].conversions[str(mod_1D)]['takeoff']=takeoff(depthspace)
+            seis[0].conversions[str(mod_1D)]['slowness']=slowness(depthspace)
+            seis[0].conversions[str(mod_1D)]['time']=timepl(depthspace)
 
 
 
-
-            # Interpolate latitude and longitudes  at the discontinuities
-            # Unfortunately obpsy taup cannot do this...yet. So this will be slow
-            discon=['P','P220s','P400s','P670s', 'P1171s']
-            x=[0,220.,400.,670., 1171.]
+            if PREM:
+                # Interpolate latitude and longitudes  at the discontinuities
+                # Unfortunately obpsy taup cannot do this...yet. So this will be slow
+                discon=['P','P220s','P400s','P670s', 'P1171s']
+                x=[0,220.,400.,670., 1171.]
+            if ak135:
+                discon=['P','P210s','P410s','P660s','P1156s']
+                x=[0,210.,410.,660.,1156.]
 
             xtime=[0]
             xlat=[slat]
             xlon=[slon]
             for d in range(1,len(discon)):
-  
-                taup_660=['taup_pierce -mod prem_added_discon_taup.nd -h '+ str(depth) + ' -sta '+ str(slat)+' ' +str(slon)+ ' -evt '+ str(elat) + ' ' + str(elon) +' -ph '+discon[d] + ' -Pierce ' + str(x[d])+',0 -nodiscon']
+                if PREM:
+                    taup_660=['taup_pierce -mod ../Tools/MODELS/PREM_FILES/prem_added_discon_taup.nd -h '+ str(depth) + ' -sta '+ str(slat)+' ' +str(slon)+ ' -evt '+ str(elat) + ' ' + str(elon) +' -ph '+discon[d] + ' -Pierce ' + str(x[d])+',0 -nodiscon']
+                if ak135:
+                    taup_660=['taup_pierce -mod ../Tools/MODELS/ak135_FILES/ak135_added_discon_taup.tvel -h '+ str(depth) + ' -sta '+ str(slat)+' ' +str(slon)+ ' -evt '+ str(elat) + ' ' + str(elon) +' -ph '+discon[d] + ' -Pierce ' + str(x[d])+',0 -nodiscon']
                 out=subprocess.check_output(taup_660,shell=True)
                 t=out.split()
                 xtime.append(float(t[-3])-float(t[-8]))
@@ -111,15 +134,15 @@ def compute_onestation(dr,filter='jgf1'):
 
 
             # Convert this trace to depths and save
-            depths=np.interp(RFtrace['time'],seis[0].conversions['prem']['time'],seis[0].conversions['prem']['depths'])
+            depths=np.interp(RFtrace['time'],seis[0].conversions[str(mod_1D)]['time'],seis[0].conversions[str(mod_1D)]['depths'])
             latitudes=lats(depthspace)
             longitudes=lons(depthspace)
 
-            seis[0].conversions['prem']['depthsfortime']=depths
-            seis[0].conversions['prem']['latitudes']=latitudes
-            seis[0].conversions['prem']['longitudes']=longitudes
-            seis[0].conversions['prem']['latfortime']=np.interp(RFtrace['time'],seis[0].conversions['prem']['time'], latitudes)
-            seis[0].conversions['prem']['lonfortime']=np.interp(RFtrace['time'],seis[0].conversions['prem']['time'],longitudes)
+            seis[0].conversions[str(mod_1D)]['depthsfortime']=depths
+            seis[0].conversions[str(mod_1D)]['latitudes']=latitudes
+            seis[0].conversions[str(mod_1D)]['longitudes']=longitudes
+            seis[0].conversions[str(mod_1D)]['latfortime']=np.interp(RFtrace['time'],seis[0].conversions[str(mod_1D)]['time'], latitudes)
+            seis[0].conversions[str(mod_1D)]['lonfortime']=np.interp(RFtrace['time'],seis[0].conversions[str(mod_1D)]['time'],longitudes)
 
             seis.write(stalist[i],format='PICKLE')
           else:
@@ -128,4 +151,4 @@ def compute_onestation(dr,filter='jgf1'):
 stations=glob.glob('../Data/*')
 
 for dr in stations:
-    compute_onestation(dr)
+    compute_onestation(dr,filter=rffilter)
