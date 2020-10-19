@@ -3,7 +3,6 @@
 # import modules
 
 import numpy as np
-import scipy
 import os
 import os.path
 import math
@@ -154,7 +153,7 @@ class ccp_volume(object):
 
 
         with open(outfilename,'wb') as handle:
-            msgpack.pack(self.VOL,handle)
+            msgpack.pack(self.VOL,handle, use_bin_type=True)
             handle.close()
 
         with open('../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/filenames.dat','w') as handle:
@@ -171,7 +170,7 @@ class ccp_volume(object):
 #############################################################################
 # Load latest volume to dictionary
 #############################################################################
-    def load_latest(self,name='Megavolume',filter='rff2',conversion='prem',factor=1.):
+    def load_latest(self,name='Megavolume',filter='jgf1',conversion='prem',factor=2.):
         '''
         Loads latest volume
         '''
@@ -181,13 +180,9 @@ class ccp_volume(object):
         volumefile=line.split()[1]
         print(runnum, volumefile)
 
-
-
-        # get last stackfile name
-
         ####### Read in volumes
-
-        self.VOL.update(msgpack.unpack(open(volumefile,'rb'), use_list=False,object_hook=m.decode))
+        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
+        # self.VOL.update(msgpack.unpack(open(volumefile,'rb'), use_list=False, object_hook=m.decode))
         #del self.VOL['trackRFs']
 
         
@@ -198,7 +193,7 @@ class ccp_volume(object):
 # Add list of receiver functions to Volume
 #############################################################################
 
-    def addlist(self,rflist,name='Megavolume',filter='rff2',conversion='EU60',factor=1.):
+    def addlist(self,rflist,name='Megavolume',filter='jgf1',conversion='prem',factor=2.):
         ''' 
         Adds list of PICKLE files to volume
         The code has no trouble adding the same PICKLE file twice, which means those are not double weighted in the stack. Might need a fix...
@@ -218,8 +213,8 @@ class ccp_volume(object):
                 #try:
                     # Read and retrieve receiver function
                     seis=read(rflist[i],format='PICKLE')
-                    self.VOL.count=self.VOL.count+1
-                    rffile.write("%d %s \n" % (int(self.VOL.count),rflist[i]))
+                    self.VOL['count']=self.VOL['count']+1
+                    rffile.write("%d %s \n" % (int(self.VOL['count']),rflist[i]))
 
 
                     RF = np.real(getattr(seis[0],filter)['iterativedeconvolution'])
@@ -228,43 +223,43 @@ class ccp_volume(object):
                     if np.mean(RF[indm-10:indm+10])<0.: # flip receiver function if needed
                         RF=RF*-1.
                     RF=RF/np.max(np.abs(RF)) # Normalize RF
-                    for d in range(len(self.VOL.grid_depth)): # loop through all depths
+                    for d in range(len(self.VOL['grid_depth'])): # loop through all depths
                             # find (lat,lon) of the ray path at this given depth 3D
-                            x       = np.argmin(np.abs((seis[0].conversions[conversion]['depths']-self.VOL.grid_depth[d])))
+                            x       = np.argmin(np.abs((seis[0].conversions[conversion]['depths']-self.VOL['grid_depth'][d])))
                             #find (lat,lon) of the ray path at this given depth 3D
                             latx = seis[0].conversions[conversion]['latitudes'][x]
                             lonx = seis[0].conversions[conversion]['longitudes'][x]
-                            x_RF    = np.argmin(np.abs((seis[0].conversions[conversion]['depthsfortime']-self.VOL.grid_depth[d]))) 
+                            x_RF    = np.argmin(np.abs((seis[0].conversions[conversion]['depthsfortime']-self.VOL['grid_depth'][d]))) 
 
                             # loop through all lats and lons for the given depth
                             # put some limits on grid to use
-                            lonind  = np.argmin(np.abs(self.VOL.grid_lon-lonx))
+                            lonind  = np.argmin(np.abs(self.VOL['grid_lon']-lonx))
                             inds=int(round(d/30.)+3.) # widen as going deeper
                             lonlim  = np.arange(lonind-inds,lonind+inds)
-                            latind  = np.argmin(np.abs(self.VOL.grid_lat-latx))
+                            latind  = np.argmin(np.abs(self.VOL['grid_lat']-latx))
                             latlim  = np.arange(latind-inds,latind+inds)
                             for k in lonlim:
                                 for j in latlim:
-                                  if k>-1 and j>-1 and k < len(self.VOL.grid_lon) and j < len(self.VOL.grid_lat):
+                                  if k>-1 and j>-1 and k < len(self.VOL['grid_lon']) and j < len(self.VOL['grid_lat']):
                                     # Stack into 1D stacks
-                                    dist = haversine(latx,lonx,[self.VOL.grid_lat[j]],[self.VOL.grid_lon[k]],self.VOL.grid_depth[d]) # calculate distance
+                                    dist = haversine(latx,lonx,[self.VOL['grid_lat'][j]],[self.VOL['grid_lon'][k]],self.VOL['grid_depth'][d]) # calculate distance
 
-                                    w    = weight(dist,self.VOL.grid_depth[d],self.VOL.grid_vs[d],factor) # calculate weight using S wave fresnel zone
+                                    w    = weight(dist,self.VOL['grid_depth'][d],self.VOL['grid_vs'][d],factor) # calculate weight using S wave fresnel zone
                                     if w>0:
-                                        #self.VOL.trackRFs[k][j][d].append(self.VOL.count)
-                                        self.VOL.num[k,j,d]          = self.VOL.num[k,j,d]+1.                             # count number of receiver functions
+                                        #self.VOL['trackRFs'][k][j][d].append(self.VOL['count'])
+                                        self.VOL['num'][k,j,d]          = self.VOL['num'][k,j,d]+1.                             # count number of receiver functions
 
-                                        self.VOL.volume[k,j,d]       = self.VOL.volume[k,j,d]+w*RF[x_RF]                  # stack receiver function into volume  
-                                        self.VOL.volumeweight[k,j,d]    = self.VOL.volumeweight[k,j,d]+w                     # stack weights    
-                                        self.VOL.volumesigma[k,j,d]  = self.VOL.volumesigma[k,j,d]+w*(RF[x_RF]-(self.VOL.volume[k,j,d]/self.VOL.volumeweight[k,j,d]))**2. # stack sign 
-                                        self.VOL.volumesign[k,j,d]   = self.VOL.volumesign[k,j,d]+w*np.sign(RF[x_RF])     # stack sign of receiver function
+                                        self.VOL['volume'][k,j,d]       = self.VOL['volume'][k,j,d]+w*RF[x_RF]                  # stack receiver function into volume  
+                                        self.VOL['volumeweight'][k,j,d]    = self.VOL['volumeweight'][k,j,d]+w                     # stack weights    
+                                        self.VOL['volumesigma'][k,j,d]  = self.VOL['volumesigma'][k,j,d]+w*(RF[x_RF]-(self.VOL['volume'][k,j,d]/self.VOL['volumeweight'][k,j,d]))**2. # stack sign 
+                                        self.VOL['volumesign'][k,j,d]   = self.VOL['volumesign'][k,j,d]+w*np.sign(RF[x_RF])     # stack sign of receiver function
 
-        print('RFs used', self.VOL.count)
+        print('RFs used', self.VOL['count'])
 
         # Write out at the end of list
         outfilename='../CCP_volumes/'+name+'_'+rffilter+'_'+conversion+'_'+str(factor)+'/Stack_'+str(int(runnum+1))+'.PICKLE'
         with open(outfilename,'wb') as handle:
-                    msgpack.pack(self.VOL,handle)
+                    msgpack.pack(self.VOL,handle,use_bin_type=True)
                     handle.close()
         with open('../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/filenames.dat','a') as handle:
             handle.write('%d %s \n'% (runnum+1, outfilename))
