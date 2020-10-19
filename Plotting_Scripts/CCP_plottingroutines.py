@@ -1,28 +1,22 @@
 # common conversion point stacking
 
 # import modules
-import sys
 from geographiclib.geodesic import Geodesic as geo
 import numpy as np
-# from matplotlib.mlab import griddata
 import scipy
 import scipy.ndimage
-from scipy import interpolate
-import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
-import numpy as np
 import os
 import os.path
 import math
 import msgpack
 import msgpack_numpy as m
 m.patch()
-import shutil
 from matplotlib.colors import LogNorm
+from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.cm as cm
-from obspy import read
-from scipy import stats
 import numpy.ma as ma
+import matplotlib.pyplot as plt
 
 import mpl_toolkits
 

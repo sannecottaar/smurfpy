@@ -3,7 +3,6 @@
 # import modules
 
 import numpy as np
-import scipy
 import os
 import os.path
 import math
