@@ -94,8 +94,8 @@ class ccp_volume(object):
             print('loading', name, runnum, volumefile)
 
         # Read in volumes
-#        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
-        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode))
+       self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
+        # self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode))
 
 
         return self
@@ -109,15 +109,15 @@ class ccp_volume(object):
 
          coverage_file = open('../CCP_volumes/' + name + '_' + str(depth) + '_weights_' + conversion + '_' + str(filter) + '_' +str(int(factor))+'.txt', 'w')
         fig = plt.figure(figsize=(6,6))
-        d = np.argmin(np.abs(self.VOL.grid_depth-depth))
-        slice = self.VOL.volumeweight[:,:, d].copy()
+        d = np.argmin(np.abs(self.VOL['grid_depth']-depth))
+        slice = self.VOL['volumeweight'][:,:, d].copy()
 
 
-        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
+        xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
 
-        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=0, resolution='i')
-        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
-        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL['grid_lat']), urcrnrlat=np.max(self.VOL['grid_lat']), llcrnrlon=np.min(self.VOL['grid_lon']), urcrnrlon=np.max(self.VOL['grid_lon']), lat_ts=0, resolution='i')
+        m.drawparallels(np.arange(np.min(self.VOL['grid_lat']), np.max(self.VOL['grid_lat']), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(np.min(self.VOL['grid_lon']), np.max(self.VOL['grid_lon']), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
         m.drawcountries()
         m.drawcoastlines(zorder=2, color='k', linewidth=1)
 
@@ -127,17 +127,17 @@ class ccp_volume(object):
         contours = [1., 1.e1, 1.e2, 1.e3, 1.e4]#[1.e0,1.e1,1.e2,1.e3,1.e4]
         im =plt.contourf(x, y, slice.T, contours, norm=LogNorm(),zorder=1)
 #        To write out the volumeweights
-        for i in range(len(self.VOL.grid_lon)):
-            for j in range(len(self.VOL.grid_lat)):
-                coverage_file.write(str(self.VOL.grid_lon[i])+'\t')
-                coverage_file.write(str(self.VOL.grid_lat[j])+'\t')
+        for i in range(len(self.VOL['grid_lon'])):
+            for j in range(len(self.VOL['grid_lat'])):
+                coverage_file.write(str(self.VOL['grid_lon'][i])+'\t')
+                coverage_file.write(str(self.VOL['grid_lat'][j])+'\t')
                 coverage_file.write(str(slice.T[j,i])+'\n')
         coverage_file.close()        
 
         dep_str=str(depth)+'km'
       
-        d_lon=np.min(self.VOL.grid_lon)+0.4
-        d_lat=np.min(self.VOL.grid_lat)+0.4       
+        d_lon=np.min(self.VOL['grid_lon'])+0.4
+        d_lat=np.min(self.VOL['grid_lat'])+0.4       
         x, y = m(d_lon, d_lat)  
         plt.text(x, y,dep_str,fontsize=10,ha='left',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))    
 
@@ -160,27 +160,27 @@ class ccp_volume(object):
         wb=5
         
         plt.figure(figsize=(10, 8))
-        depths = self.VOL.grid_depth
+        depths = self.VOL['grid_depth']
         #print('depths are ', depths)
         val_list = [x for x in range(len(depths)) if depths[x] > mindepth and depths[x] < maxdepth]
         
 
-        # thickness = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        dmap = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        # coverage = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        dsign = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        # thickness = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
+        dmap = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
+        # coverage = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
+        dsign = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
         
         amparray=[]
-        for i in range(len(self.VOL.grid_lon)):
-            for j in range(len(self.VOL.grid_lat)):
-                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
+        for i in range(len(self.VOL['grid_lon'])):
+            for j in range(len(self.VOL['grid_lat'])):
+                RF = self.VOL['volume'][i, j,:]/self.VOL['volumeweight'][i, j,:]
                 plt.plot(RF)
                  # This appears to be doing 1.96x std so its ~2std.
-                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
+                std = 1.96*np.sqrt(self.VOL['volumesigma'][i, j,:]/(self.VOL['volumeweight'][i, j,:]*self.VOL['volumeweight'][i, j,:]))
                 maxmap = np.argmax(RF[val_list])
 
                 if depths[val_list[maxmap]] > depths[val_list[wb-1]] and depths[val_list[maxmap]] < depths[val_list[-wb]]:
-                    if self.VOL.volumeweight[i, j, val_list[maxmap]] >= mincoverage:
+                    if self.VOL['volumeweight'][i, j, val_list[maxmap]] >= mincoverage:
                         if abs(RF[val_list[maxmap]])>std[val_list[maxmap]]:
                             dmap[i, j] = depths[val_list[maxmap]]
 
@@ -201,14 +201,14 @@ class ccp_volume(object):
 
 
         # Prepare map
-        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
+        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL['grid_lat']), urcrnrlat=np.max(self.VOL['grid_lat']), llcrnrlon=np.min(self.VOL['grid_lon']), urcrnrlon=np.max(self.VOL['grid_lon']), lat_ts=20, resolution='i')
 
-        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
-        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawparallels(np.arange(np.min(self.VOL['grid_lat']), np.max(self.VOL['grid_lat']), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(np.min(self.VOL['grid_lon']), np.max(self.VOL['grid_lon']), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
         m.drawcountries()
         m.drawcoastlines(zorder=1, color='k', linewidth=1)
 
-        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
+        xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
         x, y = m(xx, yy)
 
         if amplitude is False:
@@ -235,24 +235,24 @@ class ccp_volume(object):
         #cb.set_label('Amplitude')
         
         # Label region and conversion at top.
-        r_lon=np.max(self.VOL.grid_lon)-0.4
-        r_lat=np.max(self.VOL.grid_lat)-0.4
+        r_lon=np.max(self.VOL['grid_lon'])-0.4
+        r_lat=np.max(self.VOL['grid_lat'])-0.4
         x, y = m(r_lon, r_lat)  
         plt.text(x, y,region,fontsize=10,ha='right',va='top',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
         
-        c_lon=np.min(self.VOL.grid_lon)+0.4
-        c_lat=np.max(self.VOL.grid_lat)-0.4
+        c_lon=np.min(self.VOL['grid_lon'])+0.4
+        c_lat=np.max(self.VOL['grid_lat'])-0.4
         x, y = m(c_lon, c_lat)  
         plt.text(x, y,conversion,fontsize=10,ha='left',va='top',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))         
         
         # Label median and variance at bottom.
-        med_lon=np.min(self.VOL.grid_lon)+0.4
-        med_lat=np.min(self.VOL.grid_lat)+0.4
+        med_lon=np.min(self.VOL['grid_lon'])+0.4
+        med_lat=np.min(self.VOL['grid_lat'])+0.4
         x, y = m(med_lon, med_lat)  
         plt.text(x, y,med_str,fontsize=10,ha='left',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
         
-        var_lon=np.max(self.VOL.grid_lon)-0.4
-        var_lat=np.min(self.VOL.grid_lat)+0.4
+        var_lon=np.max(self.VOL['grid_lon'])-0.4
+        var_lat=np.min(self.VOL['grid_lat'])+0.4
         x, y = m(var_lon, var_lat)  
         plt.text(x, y,var_str,fontsize=10,ha='right',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))         
                
@@ -277,28 +277,28 @@ class ccp_volume(object):
         wb=5
    
         plt.figure(figsize=(10, 8))
-        depths = self.VOL.grid_depth
+        depths = self.VOL['grid_depth']
         print(depths)
         l410 = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 430]
         l660 = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 700]
 
-        # thickness = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        dmap = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        # coverage = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
+        # thickness = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
+        dmap = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
+        # coverage = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
         
         amparray=[]
-        for i in range(len(self.VOL.grid_lon)):
-            for j in range(len(self.VOL.grid_lat)):
+        for i in range(len(self.VOL['grid_lon'])):
+            for j in range(len(self.VOL['grid_lat'])):
 
-                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
+                RF = self.VOL['volume'][i, j,:]/self.VOL['volumeweight'][i, j,:]
                 plt.plot(RF)
                 # Again originally doing 1.96x std so changes to 1xstd
-                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
+                std = 1.96*np.sqrt(self.VOL['volumesigma'][i, j,:]/(self.VOL['volumeweight'][i, j,:]*self.VOL['volumeweight'][i, j,:]))
                 maxmap410 = np.argmax(RF[l410])
                 maxmap660 = np.argmax(RF[l660])
                 
                 if depths[l410[maxmap410]] > depths[l410[wb-1]] and depths[l410[maxmap410]] < depths[l410[-wb]] and depths[l660[maxmap660]] > depths[l660[wb-1]] and depths[l660[maxmap660]] < depths[l660[-wb]]:
-                    if self.VOL.volumeweight[i, j, l410[maxmap410]] >= mincoverage:
+                    if self.VOL['volumeweight'][i, j, l410[maxmap410]] >= mincoverage:
                         if RF[l410[maxmap410]] > std[l410[maxmap410]] and RF[l660[maxmap660]] > std[l660[maxmap660]]:
                             dmap[i, j] = depths[l660[maxmap660]]-depths[l410[maxmap410]]
         
@@ -316,14 +316,14 @@ class ccp_volume(object):
         print(var_str)
 
         # Prepare map
-        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
+        m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL['grid_lat']), urcrnrlat=np.max(self.VOL['grid_lat']), llcrnrlon=np.min(self.VOL['grid_lon']), urcrnrlon=np.max(self.VOL['grid_lon']), lat_ts=20, resolution='i')
 
-        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
-        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawparallels(np.arange(np.min(self.VOL['grid_lat']), np.max(self.VOL['grid_lat']), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(np.min(self.VOL['grid_lon']), np.max(self.VOL['grid_lon']), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
         m.drawcountries()
         m.drawcoastlines(zorder=1, color='k', linewidth=1)
 
-        xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
+        xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
         x, y = m(xx, yy)
 
         #cs = plt.contourf(x, y, dmap.T, vmin=220.,levels=np.linspace(220., 280., 81.), cmap=cm.RdBu) 
@@ -352,21 +352,21 @@ class ccp_volume(object):
 
         
         # plt.figure(figsize=(18, 8))
-        depths = self.VOL.grid_depth
+        depths = self.VOL['grid_depth']
         l410 = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 430]
         l660 = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 700]
 
 
-        thickness1D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        d4101D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        d6601D = np.empty((len(self.VOL.grid_lon), len(self.VOL.grid_lat)))
-        for i in range(len(self.VOL.grid_lon)):
-            for j in range(len(self.VOL.grid_lat)):
+        thickness1D = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
+        d4101D = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
+        d6601D = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
+        for i in range(len(self.VOL['grid_lon'])):
+            for j in range(len(self.VOL['grid_lat'])):
 
 
-                RF = self.VOL.volume[i, j,:]/self.VOL.volumeweight[i, j,:]
+                RF = self.VOL['volume'][i, j,:]/self.VOL['volumeweight'][i, j,:]
                 # Again originally 1.96 so changed to 1.
-                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
+                std = 1.96*np.sqrt(self.VOL['volumesigma'][i, j,:]/(self.VOL['volumeweight'][i, j,:]*self.VOL['volumeweight'][i, j,:]))
                 max410 = np.argmax(RF[l410])
                 max660 = np.argmax(RF[l660])
                 maxamp410 = np.max(RF[l410])
@@ -386,8 +386,8 @@ class ccp_volume(object):
 
                 COV410 = False; STD410 = False; WITHINLIM410 = False;  COV660 = False; STD660 = False; WITHINLIM660 = False
                         
-                if self.VOL.volumeweight[i,j,l410[max410]]>=mincoverage: COV410 = True
-                if self.VOL.volumeweight[i,j,l660[max660]]>=mincoverage: COV660 = True
+                if self.VOL['volumeweight'][i,j,l410[max410]]>=mincoverage: COV410 = True
+                if self.VOL['volumeweight'][i,j,l660[max660]]>=mincoverage: COV660 = True
                 if RF[l410[max410]] > std[l410[max410]]                : STD410 = True
                 if RF[l660[max660]] > std[l660[max660]]                : STD660 = True
                 if depths[l410[max410]] > depths[l410[wb-1]] and depths[l410[max410]] < depths[l410[-wb]]: WITHINLIM410 = True
@@ -395,8 +395,8 @@ class ccp_volume(object):
        
                 if COV410 and WITHINLIM410 and COV660 and WITHINLIM660:
                     if STD410 and STD660:
-                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
-                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lon'][i])+'\t')
                         depth410660_2SE.write(str(depths[l410[max410]])+'\t')
                         depth410660_2SE.write(str(depths[l660[max660]])+'\t')
                         depth410660_2SE.write(str(sig_410)+'\t')
@@ -405,8 +405,8 @@ class ccp_volume(object):
                         depth410660_2SE.write(str(maxamp660)+'\n') 
 
                     elif STD660 and not STD410:
-                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
-                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lon'][i])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(depths[l660[max660]])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
@@ -415,8 +415,8 @@ class ccp_volume(object):
                         depth410660_2SE.write(str(maxamp660)+'\n')                       
                     
                     elif STD410 and not STD660:
-                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
-                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lon'][i])+'\t')
                         depth410660_2SE.write(str(depths[l410[max410]])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(sig_410)+'\t')
@@ -426,8 +426,8 @@ class ccp_volume(object):
 
                 if not COV410 and COV660 and WITHINLIM660:
                     if STD660:
-                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
-                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lon'][i])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(depths[l660[max660]])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
@@ -437,8 +437,8 @@ class ccp_volume(object):
                             
                 if not COV660 and COV410 and WITHINLIM410:
                     if STD410:
-                        depth410660_2SE.write(str(self.VOL.grid_lat[j])+'\t')
-                        depth410660_2SE.write(str(self.VOL.grid_lon[i])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
+                        depth410660_2SE.write(str(self.VOL['grid_lon'][i])+'\t')
                         depth410660_2SE.write(str(depths[l410[max410]])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(sig_410)+'\t')
@@ -450,15 +450,15 @@ class ccp_volume(object):
 
                     
         # # Prepare map
-        # m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL.grid_lat), urcrnrlat=np.max(self.VOL.grid_lat), llcrnrlon=np.min(self.VOL.grid_lon), urcrnrlon=np.max(self.VOL.grid_lon), lat_ts=20, resolution='i')
-        # m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
-        # m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
+        # m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL['grid_lat']), urcrnrlat=np.max(self.VOL['grid_lat']), llcrnrlon=np.min(self.VOL['grid_lon']), urcrnrlon=np.max(self.VOL['grid_lon']), lat_ts=20, resolution='i')
+        # m.drawparallels(np.arange(np.min(self.VOL['grid_lat']), np.max(self.VOL['grid_lat']), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
+        # m.drawmeridians(np.arange(np.min(self.VOL['grid_lon']), np.max(self.VOL['grid_lon']), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
         # m.drawcoastlines(color='k')
         # m.drawcountries(color='k')
         # m.drawmapboundary(fill_color=[1.0, 1.0, 1.0])
 
 
-        # xx, yy = np.meshgrid(self.VOL.grid_lon, self.VOL.grid_lat)
+        # xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
         # x, y = m(xx, yy)
         # cs = plt.contourf(x, y, thickness1D.T, levels=np.linspace(220., 300., 81.), cmap=cm.gist_earth_r)
         # cs.cmap.set_under('w')
@@ -482,15 +482,15 @@ class ccp_volume(object):
         
         if direction == 'NS':
             lon = lonorlat
-            n = np.argmin(np.abs(self.VOL.grid_lon-lon))
-            crossec = self.VOL.volume[n,:,:].T.copy()
-            vol_sig = self.VOL.volumesigma[n,:,:].T.copy()
-            w = self.VOL.volumeweight[n,:,:].T
+            n = np.argmin(np.abs(self.VOL['grid_lon']-lon))
+            crossec = self.VOL['volume'][n,:,:].T.copy()
+            vol_sig = self.VOL['volumesigma'][n,:,:].T.copy()
+            w = self.VOL['volumeweight'][n,:,:].T
 
-            xaxis = self.VOL.grid_lat
+            xaxis = self.VOL['grid_lat']
             xlabel = 'latitude (dg)'
             yends = [lon, lon]
-            xends = [self.VOL.latmin, self.VOL.latmax]
+            xends = [self.VOL['latmin'], self.VOL['latmax']]
 
 
             lons = lon*np.ones_like(xaxis)
@@ -498,18 +498,18 @@ class ccp_volume(object):
 
         if direction == 'EW':
             lat = lonorlat
-            n = np.argmin(np.abs(self.VOL.grid_lat-lat))
-            crossec = self.VOL.volume[:, n,:].T.copy()
-            vol_sig = self.VOL.volumesigma[:, n,:].T.copy()
-            w = self.VOL.volumeweight[:, n,:].T
-            xaxis = self.VOL.grid_lon
+            n = np.argmin(np.abs(self.VOL['grid_lat']-lat))
+            crossec = self.VOL['volume'][:, n,:].T.copy()
+            vol_sig = self.VOL['volumesigma'][:, n,:].T.copy()
+            w = self.VOL['volumeweight'][:, n,:].T
+            xaxis = self.VOL['grid_lon']
             xlabel = 'longitude (dg)'
-            xends = [self.VOL.lonmin, self.VOL.lonmax]
+            xends = [self.VOL['lonmin'], self.VOL['lonmax']]
             yends = [lat, lat]
             lons = xaxis
             lats = lat*np.ones_like(xaxis)
 
-        depths = self.VOL.grid_depth
+        depths = self.VOL['grid_depth']
 
         # normalize
         for i in range(np.shape(w)[0]):
@@ -534,9 +534,9 @@ class ccp_volume(object):
         plt.figure(figsize=(14, 8))
 
         plt.subplot(2, 2, 2)
-        m = Basemap(projection='merc', llcrnrlat=self.VOL.latmin, urcrnrlat=self.VOL.latmax, llcrnrlon=self.VOL.lonmin, urcrnrlon=self.VOL.lonmax, lat_ts=20, resolution='i')
-        m.drawparallels(np.arange(np.min(self.VOL.grid_lat), np.max(self.VOL.grid_lat), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
-        m.drawmeridians(np.arange(np.min(self.VOL.grid_lon), np.max(self.VOL.grid_lon), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m = Basemap(projection='merc', llcrnrlat=self.VOL['latmin'], urcrnrlat=self.VOL['latmax'], llcrnrlon=self.VOL['lonmin'], urcrnrlon=self.VOL['lonmax'], lat_ts=20, resolution='i')
+        m.drawparallels(np.arange(np.min(self.VOL['grid_lat']), np.max(self.VOL['grid_lat']), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
+        m.drawmeridians(np.arange(np.min(self.VOL['grid_lon']), np.max(self.VOL['grid_lon']), 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
 
 
         m.drawcoastlines()
@@ -664,28 +664,28 @@ class ccp_volume(object):
             dist.append(haversine(lats[0], lons[0], [lats[i]], [lons[i]])/111194.)
 
         # pixelize lon and lat
-        row = (lons-np.min(self.VOL.grid_lon))/(self.VOL.grid_lon[1]-self.VOL.grid_lon[0])
+        row = (lons-np.min(self.VOL['grid_lon']))/(self.VOL['grid_lon'][1]-self.VOL['grid_lon'][0])
         for i in range(len(row)):
             if row[i] < 0:
                 row[i] = row[i]+len(self.lon)
-        col = (lats-np.min(self.VOL.grid_lat))/(self.VOL.grid_lat[1]-self.VOL.grid_lat[0])
+        col = (lats-np.min(self.VOL['grid_lat']))/(self.VOL['grid_lat'][1]-self.VOL['grid_lat'][0])
 
-        for dp in range(len(self.VOL.grid_depth)):
-            crossec.append(scipy.ndimage.map_coordinates(self.VOL.volume[:,:, dp], np.vstack((row, col))))
-            vol_sig.append(scipy.ndimage.map_coordinates(self.VOL.volumesigma[:,:, dp], np.vstack((row, col))))
-            w.append(scipy.ndimage.map_coordinates(self.VOL.volumeweight[:,:, dp], np.vstack((row, col))))
+        for dp in range(len(self.VOL['grid_depth'])):
+            crossec.append(scipy.ndimage.map_coordinates(self.VOL['volume'][:,:, dp], np.vstack((row, col))))
+            vol_sig.append(scipy.ndimage.map_coordinates(self.VOL['volumesigma'][:,:, dp], np.vstack((row, col))))
+            w.append(scipy.ndimage.map_coordinates(self.VOL['volumeweight'][:,:, dp], np.vstack((row, col))))
 
 
         crossec = np.array(crossec)
         vol_sig = np.array(vol_sig)
         w = np.array(w)
 
-        xaxis = self.VOL.grid_lat
+        xaxis = self.VOL['grid_lat']
         xlabel = 'latitude (dg)'
         xends = [lon1, lon2]
         yends = [lat1, lat2]
 
-        depths = self.VOL.grid_depth
+        depths = self.VOL['grid_depth']
 
         # normalize
         for i in range(np.shape(w)[0]):
@@ -706,7 +706,7 @@ class ccp_volume(object):
                    
 
         plt.subplot(2, 2, 2)
-        m = Basemap(projection='merc', llcrnrlat=self.VOL.latmin, urcrnrlat=self.VOL.latmax, llcrnrlon=self.VOL.lonmin, urcrnrlon=self.VOL.lonmax, lat_ts=20, resolution='i')
+        m = Basemap(projection='merc', llcrnrlat=self.VOL['latmin'], urcrnrlat=self.VOL['latmax'], llcrnrlon=self.VOL['lonmin'], urcrnrlon=self.VOL['lonmax'], lat_ts=20, resolution='i')
         m.drawparallels(np.arange(-40, 40, 10.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
         m.drawmeridians(np.arange(-20, 60, 20.), labels=[1, 0, 0, 1], linewidth=0.2, dashes=[4, 2], labelstyle='+/-', fontsize=12)
         m.drawcoastlines()
@@ -801,7 +801,7 @@ class ccp_volume(object):
     def plot_moveout(self,d660=True,name='Megavolume',filter='rff2',conversion='EU60',factor=2.):
     # Picks all profiles in grid and organizes them by 660 depth
         plt.figure(figsize=(8, 8))
-        depths = self.VOL.grid_depth
+        depths = self.VOL['grid_depth']
 
         if d660:
             ldisc = [x for x in range(len(depths)) if depths[x] > 620 and depths[x] < 700]
@@ -818,15 +818,15 @@ class ccp_volume(object):
         moveout = np.zeros((len(disc), len(depths)))
         d660l = []
         d410l = []
-        for i in range(len(self.VOL.grid_lon)):
-            for j in range(len(self.VOL.grid_lat)):
-                RF = self.VOL.volume[i, j,:]
+        for i in range(len(self.VOL['grid_lon'])):
+            for j in range(len(self.VOL['grid_lat'])):
+                RF = self.VOL['volume'][i, j,:]
                 for k in range(len(depths)):
-                    if self.VOL.volumeweight[i, j, k] > 0:
+                    if self.VOL['volumeweight'][i, j, k] > 0:
                         RF.setflags(write=1)
-                        RF[k] = RF[k]/self.VOL.volumeweight[i, j, k]
+                        RF[k] = RF[k]/self.VOL['volumeweight'][i, j, k]
 
-                std = 1.96*np.sqrt(self.VOL.volumesigma[i, j,:]/(self.VOL.volumeweight[i, j,:]*self.VOL.volumeweight[i, j,:]))
+                std = 1.96*np.sqrt(self.VOL['volumesigma'][i, j,:]/(self.VOL['volumeweight'][i, j,:]*self.VOL['volumeweight'][i, j,:]))
 
                 maxdisc = np.argmax(RF[ldisc])
 

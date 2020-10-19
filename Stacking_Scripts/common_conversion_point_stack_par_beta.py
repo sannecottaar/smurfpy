@@ -155,7 +155,7 @@ class ccp_volume(object):
         self.VOL['grid_vp']=grid_vp
 
         with open(outfilename,'wb') as handle:
-            msgpack.pack(self.VOL,handle)
+            msgpack.pack(self.VOL,handle,use_bin_type=True)
             handle.close()
 
         # print('DONE CREATING EMPTY MASTER VOLUME')
@@ -221,7 +221,7 @@ class ccp_volume(object):
         self.VOL['grid_vp']=grid_vp
 
         with open(outfilename,'wb') as handle:
-            msgpack.pack(self.VOL,handle)
+            msgpack.pack(self.VOL,handle,use_bin_type=True)
             handle.close()
 
         # print('DONE CREATING EMPTY SUB-VOLUME')
@@ -239,7 +239,7 @@ class ccp_volume(object):
         volumefile='../CCP_volumes/'+name+'_'+rffilter+'_'+conversion+'_'+str(factor)+'/Stack_master.PICKLE'
        
         # ####### Read in volumes
-        self.VOL.update(msgpack.unpack(open(volumefile,'rb'), use_list=False,object_hook=m.decode))
+        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
 
         return self
 
@@ -255,7 +255,7 @@ class ccp_volume(object):
         volumefile='../CCP_volumes/'+name+'_'+rffilter+'_'+conversion+'_'+str(factor)+'/Stack_'+str(sta_num)+'_'+str(file_num)+'.PICKLE'
         
         # ####### Read in volumes
-        self.VOL.update(msgpack.unpack(open(volumefile,'rb'), use_list=False,object_hook=m.decode))
+        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
         
         return self
 
@@ -275,47 +275,47 @@ class ccp_volume(object):
         if os.path.isfile(rffile):
             # Read and retrieve receiver function
             seis=read(rffile,format='PICKLE')
-            self.VOL.count=self.VOL.count+1
+            self.VOL['count']=self.VOL['count']+1
             RF = np.real(getattr(seis[0],filter)['iterativedeconvolution'])
             # print('seis read')
             indm=np.argmax(np.abs(RF))   
             if np.mean(RF[indm-10:indm+10])<0.: # flip receiver function if needed
                 RF=RF*-1.
             RF=RF/np.max(np.abs(RF)) # Normalize RF
-            for d in range(len(self.VOL.grid_depth)): # loop through all depths
+            for d in range(len(self.VOL['grid_depth'])): # loop through all depths
                 # find (lat,lon) of the ray path at this given depth 3D
-                x =       np.argmin(np.abs(seis[0].conversions[conversion]['depths']-self.VOL.grid_depth[d]))
+                x =       np.argmin(np.abs(seis[0].conversions[conversion]['depths']-self.VOL['grid_depth'][d]))
                 #find (lat,lon) of the ray path at this given depth 3D
                 latx = seis[0].conversions[conversion]['latitudes'][x]
                 lonx = seis[0].conversions[conversion]['longitudes'][x]
-                x_RF    = np.argmin(np.abs(seis[0].conversions[conversion]['depthsfortime']-self.VOL.grid_depth[d]))
+                x_RF    = np.argmin(np.abs(seis[0].conversions[conversion]['depthsfortime']-self.VOL['grid_depth'][d]))
 
                 # loop through all lats and lons for the given depth
                 # put some limits on grid to use
-                lonind  = np.argmin(np.abs(self.VOL.grid_lon-lonx))
+                lonind  = np.argmin(np.abs(self.VOL['grid_lon']-lonx))
                 inds=int(round(d/30.)+3.) # widen as going deeper
                 lonlim  = np.arange(lonind-inds,lonind+inds)
-                latind  = np.argmin(np.abs(self.VOL.grid_lat-latx))
+                latind  = np.argmin(np.abs(self.VOL['grid_lat']-latx))
                 latlim  = np.arange(latind-inds,latind+inds)
                 for k in lonlim:
                     for j in latlim:
-                        if k>-1 and j>-1 and k < len(self.VOL.grid_lon) and j < len(self.VOL.grid_lat):
+                        if k>-1 and j>-1 and k < len(self.VOL['grid_lon']) and j < len(self.VOL['grid_lat']):
                             # Stack into 1D stacks
-                            dist = haversine(latx,lonx,[self.VOL.grid_lat[j]],[self.VOL.grid_lon[k]],self.VOL.grid_depth[d]) # calculate distance
+                            dist = haversine(latx,lonx,[self.VOL['grid_lat'][j]],[self.VOL['grid_lon'][k]],self.VOL['grid_depth'][d]) # calculate distance
 
-                            w    = weight(dist,self.VOL.grid_depth[d],self.VOL.grid_vs[d],factor) # calculate weight using S wave fresnel zone
+                            w    = weight(dist,self.VOL['grid_depth'][d],self.VOL['grid_vs'][d],factor) # calculate weight using S wave fresnel zone
                             if w>0:
-                                # self.VOL.num[k,j,d]          = self.VOL.num[k,j,d]+1.                             # count number of receiver functions
+                                # self.VOL['num'][k,j,d]          = self.VOL['num'][k,j,d]+1.                             # count number of receiver functions
                                 wRF=w*RF[x_RF]
                                 wRF2=wRF*RF[x_RF]
-                                self.VOL.volume[k,j,d]       = self.VOL.volume[k,j,d]+wRF                  # stack receiver function into volume  
-                                self.VOL.volumeweight[k,j,d]    = self.VOL.volumeweight[k,j,d]+w                     # stack weights
-                                self.VOL.weightedvolumesquares[k,j,d] = self.VOL.weightedvolumesquares[k,j,d]+wRF2 # Summed weighted volume squares
-                                self.VOL.volumesign[k,j,d]   = self.VOL.volumesign[k,j,d]+w*np.sign(RF[x_RF])     # stack sign of receiver function
+                                self.VOL['volume'][k,j,d]       = self.VOL['volume'][k,j,d]+wRF                  # stack receiver function into volume  
+                                self.VOL['volumeweight'][k,j,d]    = self.VOL['volumeweight'][k,j,d]+w                     # stack weights
+                                self.VOL['weightedvolumesquares'][k,j,d] = self.VOL['weightedvolumesquares'][k,j,d]+wRF2 # Summed weighted volume squares
+                                self.VOL['volumesign'][k,j,d]   = self.VOL['volumesign'][k,j,d]+w*np.sign(RF[x_RF])     # stack sign of receiver function
 
         # Write out at the end of list
         with open(outfilename,'wb') as handle:
-            msgpack.pack(self.VOL,handle)
+            msgpack.pack(self.VOL,handle,use_bin_type=True)
             handle.close()
 
         # print('DONE CALCULATING 1 SUB-VOLUME')

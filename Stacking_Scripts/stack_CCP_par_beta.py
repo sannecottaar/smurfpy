@@ -4,8 +4,8 @@
 # Needs a directory '../CCP_Volumes'
 
 
-import ccp_stack_par as CCP_stack
-import os
+import common_conversion_point_stack_par_beta as CCP_stack
+import os, glob
 import time
 import sys
 from obspy import read
@@ -86,15 +86,15 @@ for idx, sta in enumerate(stations):
             # read in latest master volume
             CCP_master.load_latest_master(name=name,filter=rffilter,conversion=conversion,factor=factor)
 
-            # CCP_master.VOL.num          = CCP_master.VOL.num            + CCP_sub.VOL.num             # count number of receiver functions
-            CCP_master.VOL.volume       = CCP_master.VOL.volume         + CCP_sub.VOL.volume          # stack receiver function into volume  
-            CCP_master.VOL.volumeweight = CCP_master.VOL.volumeweight   + CCP_sub.VOL.volumeweight    # stack weights
-            CCP_master.VOL.weightedvolumesquares = CCP_master.VOL.weightedvolumesquares   + CCP_sub.VOL.weightedvolumesquares # Summed weighted volume squares
-            CCP_master.VOL.volumesign   = CCP_master.VOL.volumesign     + CCP_sub.VOL.volumesign      # stack sign of receiver function
+            # CCP_master.VOL['num']          = CCP_master.VOL['num']            + CCP_sub.VOL['num']             # count number of receiver functions
+            CCP_master.VOL['volume']       = CCP_master.VOL['volume']         + CCP_sub.VOL['volume']          # stack receiver function into volume  
+            CCP_master.VOL['volumeweight'] = CCP_master.VOL['volumeweight']   + CCP_sub.VOL['volumeweight']    # stack weights
+            CCP_master.VOL['weightedvolumesquares'] = CCP_master.VOL['weightedvolumesquares']   + CCP_sub.VOL['weightedvolumesquares'] # Summed weighted volume squares
+            CCP_master.VOL['volumesign']   = CCP_master.VOL['volumesign']     + CCP_sub.VOL['volumesign']      # stack sign of receiver function
 
             outfilename='../CCP_volumes/'+name+'_'+rffilter+'_'+conversion+'_'+str(factor)+'/Stack_master.PICKLE'
             with open(outfilename,'wb') as handle:
-                msgpack.pack(CCP_master.VOL,handle)
+                msgpack.pack(CCP_master.VOL,handle,use_bin_type=True)
                 handle.close()
 
 
@@ -121,10 +121,10 @@ for idx, sta in enumerate(stations):
             # Want to make the volumesigma for the CCP master here.
             # Defined as [Sum of weighted squared values] - [Sum of weighted values]**2 / [Sum of weights]
             CCP_master.load_latest_master(name=name,filter=rffilter,conversion=conversion,factor=factor)
-            CCP_master.VOL.volumesigma= CCP_master.VOL.weightedvolumesquares - ((CCP_master.VOL.volume**2)/ CCP_master.VOL.volumeweight)
+            CCP_master.VOL['volumesigma']= CCP_master.VOL['weightedvolumesquares'] - ((CCP_master.VOL['volume']**2)/ CCP_master.VOL['volumeweight'])
             outfilename='../CCP_volumes/'+name+'_'+rffilter+'_'+conversion+'_'+str(factor)+'/Stack_master.PICKLE'
             with open(outfilename,'wb') as handle:
-                msgpack.pack(CCP_master.VOL,handle)
+                msgpack.pack(CCP_master.VOL,handle,use_bin_type=True)
                 handle.close()
 
         print('Calculating volumesigma for:',name,rffilter,conversion,factor)
