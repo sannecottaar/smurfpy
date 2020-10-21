@@ -48,8 +48,8 @@ filt = 'jgf1'
 
 #Make directory for outputs
 savepath='../Slowness_Stacks'
-if not os.path.exists(savedir):
-    os.makedirs(savedir)
+if not os.path.exists(savepath):
+    os.makedirs(savepath)
 savepath2=savepath+'/Figures/'
 if not os.path.exists(savepath2):
     os.makedirs(savepath2)
