@@ -79,7 +79,9 @@ def compute_arrivals(conversion='prem'):
 def compute_arrivals_one_depth(depth,conversion='prem'):
 
     if conversion=='prem':
-
+        taupmodel = obspy.taup.taup_create.TauPCreate('../Tools/MODELS/PREM_FILES/prem.nd', output_filename='onediscon')
+        vmodel= taupmodel.load_velocity_model()
+        
     elif conversion=='ak135':
         taupmodel = obspy.taup.taup_create.TauPCreate('../Tools/MODELS/ak135_FILES/ak135_added_discon_taup.tvel', output_filename='onediscon')
         vmodel= taupmodel.load_velocity_model()
