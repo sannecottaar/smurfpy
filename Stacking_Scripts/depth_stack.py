@@ -52,11 +52,11 @@ if not os.path.exists(savepath):
 
 #Define constraints
 dp = 410
-lat1 = 0.
-lon1 = -160.
+lat1 = 89.
+lon1 = -179.
 lat2 = lat1
-lon2 = -178.
-lat3 = -25.
+lon2 = 179.
+lat3 = -89.
 lon3 = lon2
 lat4 = lat3
 lon4 = lon1
@@ -122,13 +122,13 @@ for s in range(len(stalist)):
         List_yes.append(stalist[s])
         count_yes = count_yes + 1
 	
-    if count_yes <= 1:
-        #Create depth stack
-        start_depth = seis[0].conversions[conversion]['depths'][0]
-        stop_depth = 1200
-        step = (stop_depth - start_depth) + 1
-        depth_space = np.linspace(start_depth,stop_depth,step)
-        STACK=np.zeros(len(depth_space))
+        if count_yes <= 1:
+            #Create depth stack
+            start_depth = seis[0].conversions[conversion]['depths'][0]
+            stop_depth = 1200
+            step = (stop_depth - start_depth) + 1
+            depth_space = np.linspace(start_depth,stop_depth,step)
+            STACK=np.zeros(len(depth_space))
 
         start_depth = seis[0].conversions[conversion]['depths'][0]
         stop_depth = seis[0].conversions[conversion]['depths'][-1]
