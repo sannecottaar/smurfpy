@@ -33,23 +33,26 @@ epimax = 90
 
 #Define constraints
 depth = 410
-lat1 = 0.
-lon1 = -160.
+lat1 = 89.
+lon1 = -179.
 lat2 = lat1
-lon2 = -178.
-lat3 = -25.
+lon2 = 179.
+lat3 = -89.
 lon3 = lon2
 lat4 = lat3
 lon4 = lon1
 
 box = Polygon([(lat1,lon1),(lat2,lon2),(lat3,lon3),(lat4,lon4)])
 #Set some values
-filts = 'jgf1'
+filt = 'jgf1'
 
 #Make directory for outputs
 savepath='../Slowness_Stacks'
 if not os.path.exists(savedir):
     os.makedirs(savedir)
+savepath2=savepath+'/Figures/'
+if not os.path.exists(savepath2):
+    os.makedirs(savepath2)
 
 #-------------------------------Loop through events---------------------------------------
 
@@ -59,7 +62,7 @@ stalist = []
 #Make list of all events
 for direc in direcs:
     print(direc)
-    elif os.path.isfile(direc + '/selected_RFs_' + filt + '.dat'):
+    if os.path.isfile(direc + '/selected_RFs_' + filt + '.dat'):
         with open(direc + '/selected_RFs_' + filt + '.dat') as a:
             starfs = a.read().splitlines()
             for line in starfs:
