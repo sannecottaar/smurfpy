@@ -41,11 +41,11 @@ plot_histogram = True  # plot histogram of data covarage
 depth = 410
 
 # Lat and Lon constraints, piercepoints within this box will be accepted 
-lat1 = -25
-lon1 = -178
+lat1 = 89.
+lon1 = -179.
 lat2 = lat1
-lon2 = -160
-lat3 = 0
+lon2 = 179.
+lat3 = -89.
 lon3 = lon2
 lat4 = lat3
 lon4 = lon1
