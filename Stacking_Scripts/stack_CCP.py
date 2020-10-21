@@ -41,10 +41,10 @@ else:
 
 
 ## Data to add (currently looping through all RFs in station directories, this could be adapted
-sta=glob.glob('../Data/*')
+stations=glob.glob('../Data/*')
 
 
-for i in range(len(sta)):
+for sta in stations:
     rflist=[]
     if os.path.exists(sta + '/selected_RFs_'+str(rffilter)+'.dat'):
         station_file = open(sta + '/selected_RFs_'+str(rffilter)+'.dat','r')
