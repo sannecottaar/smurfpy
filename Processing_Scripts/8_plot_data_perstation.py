@@ -7,7 +7,7 @@ import glob
 import numpy as np
 from obspy import UTCDateTime
 
-direc = 'DataRF'
+direc = '../Data'
 flag = 'SV'
 filt = 'jgf1'
 
