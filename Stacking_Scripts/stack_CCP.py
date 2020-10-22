@@ -14,15 +14,15 @@ from obspy import read
 #########################
 # Set parameters for stack
 ########################
-name= 'CCP_WUS'
+name= 'CCP_South_Africa'
 rffilter='jgf1'  # RF used
 conversion='prem' # conversion use
 factor=2. # doubling the fresnel zone width
 newstack = True #Starting a new stack (True) or adding data to an old one (False)
-lonmin=-130.
-lonmax=-100.
-latmin=20.
-latmax=50.
+lonmin=11.
+lonmax=40.
+latmin=-36.
+latmax=-14.
 depmin=60.
 depmax=1300.
 lonrez=(lonmax-lonmin)*2.+1. # every 0.5 degrees
@@ -41,10 +41,10 @@ else:
 
 
 ## Data to add (currently looping through all RFs in station directories, this could be adapted
-sta=glob.glob('../Data/*')
+stations=glob.glob('../Data/*')
 
 
-for i in range(len(sta)):
+for sta in stations:
     rflist=[]
     if os.path.exists(sta + '/selected_RFs_'+str(rffilter)+'.dat'):
         station_file = open(sta + '/selected_RFs_'+str(rffilter)+'.dat','r')

@@ -41,11 +41,11 @@ plot_histogram = True  # plot histogram of data covarage
 depth = 410
 
 # Lat and Lon constraints, piercepoints within this box will be accepted 
-lat1 = -25
-lon1 = -178
+lat1 = 89.
+lon1 = -179.
 lat2 = lat1
-lon2 = -160
-lat3 = 0
+lon2 = 179.
+lat3 = -89.
 lon3 = lon2
 lat4 = lat3
 lon4 = lon1
@@ -61,7 +61,7 @@ phases_to_plot  = ['PP', 'P410s', 'P660s']
 
 # Define min/max epi dist and no. steps
 step = bin_size
-epi_steps = (60/step)+1
+epi_steps = (60//step)+1
 min_epi = 30
 max_epi = 90
 epi_range = np.linspace(min_epi, max_epi, epi_steps)
@@ -92,8 +92,8 @@ stadirs = glob.glob(direc + '/*')
 for stadir in stadirs:
 
     stalist = []
-    if os.path.isfile(direc + '/selected_RFs_' + filt + '.dat'):
-        with open(direc + '/selected_RFs_' + filt + '.dat') as a:
+    if os.path.isfile(stadir + '/selected_RFs_' + filt + '.dat'):
+        with open(stadir + '/selected_RFs_' + filt + '.dat') as a:
             starfs = a.read().splitlines()
             for line in starfs:
                 stalist.append(line)
@@ -128,7 +128,7 @@ for stadir in stadirs:
 
             # Find the index in the stack matrix that this epicentral distance
             # relates to
-            rounded_epi_dist_loc = (np.floor((epi_dist-30)/step))
+            rounded_epi_dist_loc = int(np.floor((epi_dist-30)/step))
 
             # Add every RF amplitude (vector) to the correct column (bin) in
             # the STACK matrix

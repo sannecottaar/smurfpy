@@ -18,7 +18,7 @@ from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
 ak135=True
-rffliter='jgf1'
+rffilter='jgf1'
 
 if ak135:
     taupmodel = TauPyModel(model='ak135') # Could change to AK135 to setup in accordance with AFRP20
