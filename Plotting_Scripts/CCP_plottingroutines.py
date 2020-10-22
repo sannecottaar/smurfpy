@@ -13,12 +13,9 @@ import msgpack
 import msgpack_numpy as m
 m.patch()
 from matplotlib.colors import LogNorm
-from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.cm as cm
 import numpy.ma as ma
 import matplotlib.pyplot as plt
-
-import mpl_toolkits
 
 # definition of the half width of the fresnel zone
 knotspacing = lambda r, vs: 1./2.*np.sqrt(((10./3.*vs)+r)**2.-r**2.) # in m for a 10s wave
@@ -82,13 +79,13 @@ class ccp_volume(object):
             print('loading', name, volumefile)
         else:
             line = open('../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/filenames.dat', 'r').readlines()[-1]
-    #        line = open('../AFR_CCP_volumes_SAFE/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/filenames.dat', 'r').readlines()[-1]    # A temporary solution....    
+    #        line = open('../AFR_CCP_volumes_SAFE/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/filenames.dat', 'r').readlines()[-1]    # A temporary solution....
             runnum = int(float(line.split()[0]))
             volumefile = line.split()[1]
             print('loading', name, runnum, volumefile)
 
         # Read in volumes
-       self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
+        self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode, encoding='utf-8'))
         # self.VOL.update(msgpack.unpack(open(volumefile, 'rb'), use_list=False, object_hook=m.decode))
 
 
@@ -101,7 +98,7 @@ class ccp_volume(object):
 
     def plot_datacoverage(self,depth,name='Megavolume',filter='rff2', conversion='prem', factor=2.):
 
-         coverage_file = open('../CCP_volumes/' + name + '_' + str(depth) + '_weights_' + conversion + '_' + str(filter) + '_' +str(int(factor))+'.txt', 'w')
+        coverage_file = open('../CCP_volumes/' + name + '_' + str(depth) + '_weights_' + conversion + '_' + str(filter) + '_' +str(int(factor))+'.txt', 'w')
         fig = plt.figure(figsize=(6,6))
         d = np.argmin(np.abs(self.VOL['grid_depth']-depth))
         slice = self.VOL['volumeweight'][:,:, d].copy()
@@ -126,21 +123,21 @@ class ccp_volume(object):
                 coverage_file.write(str(self.VOL['grid_lon'][i])+'\t')
                 coverage_file.write(str(self.VOL['grid_lat'][j])+'\t')
                 coverage_file.write(str(slice.T[j,i])+'\n')
-        coverage_file.close()        
+        coverage_file.close()
 
         dep_str=str(depth)+'km'
-      
+
         d_lon=np.min(self.VOL['grid_lon'])+0.4
-        d_lat=np.min(self.VOL['grid_lat'])+0.4       
-        x, y = m(d_lon, d_lat)  
-        plt.text(x, y,dep_str,fontsize=10,ha='left',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))    
+        d_lat=np.min(self.VOL['grid_lat'])+0.4
+        x, y = m(d_lon, d_lat)
+        plt.text(x, y,dep_str,fontsize=10,ha='left',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
 
         fig.subplots_adjust(bottom=.2)
         cbar_ax = fig.add_axes([0.2, 0.1, 0.6, 0.05])
         cb = fig.colorbar(im, cax=cbar_ax, orientation='horizontal')
         cb.set_label('Sum of weights at ' + str(depth) + ' km', fontsize=12)
-        cb.ax.tick_params(labelsize=10) 
-    
+        cb.ax.tick_params(labelsize=10)
+
 
 
 #
@@ -152,19 +149,18 @@ class ccp_volume(object):
         # If amplitude =True, it will plot the amplitude and not the depth
         # window buffer at end of depth array to not pick.
         wb=5
-        
+
         plt.figure(figsize=(10, 8))
         depths = self.VOL['grid_depth']
         #print('depths are ', depths)
         val_list = [x for x in range(len(depths)) if depths[x] > mindepth and depths[x] < maxdepth]
-        
+
 
         # thickness = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
         dmap = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
         # coverage = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
         dsign = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
-        
-        amparray=[]
+
         for i in range(len(self.VOL['grid_lon'])):
             for j in range(len(self.VOL['grid_lat'])):
                 RF = self.VOL['volume'][i, j,:]/self.VOL['volumeweight'][i, j,:]
@@ -182,13 +178,13 @@ class ccp_volume(object):
         dmapall = np.ravel(dmap)
         if amplitude == False:
             l = [l for l in range(len(dmapall)) if dmapall[l] > mindepth+1. and dmapall[l] < maxdepth - 1.]
-            
+
             median=         round(np.median((dmapall[l]))*100)/100
             variance=       round(np.var((dmapall[l]))*100)/100
-            
+
             med_str='med = ' + str(median)
             var_str='var = ' + str(variance)
-            
+
             print(med_str)
             print(var_str)
 
@@ -206,18 +202,18 @@ class ccp_volume(object):
         x, y = m(xx, yy)
 
         if amplitude is False:
-            cs = plt.pcolor(x, y, dmap.T, vmin=mindepth, vmax=maxdepth, cmap=lajolla_map, linewidth=0, rasterized=False)
+            cs = plt.pcolor(x, y, dmap.T, vmin=mindepth, vmax=maxdepth, cmap='inferno', linewidth=0, rasterized=False)
             #mask area if not significant
             dsign=ma.masked_array(dsign, dsign==0)
 #            sign = plt.contourf(x, y, dsign.T, vmin=0.5, vmax=1.0, cmap=cm.Greys, linewidth=0, alpha=0.7, rasterized=False)
-        
+
         else:
-            cs = plt.pcolor(x, y, dmap.T, vmin=0.02, vmax=0.12, cmap=lajolla_map, linewidth=0, rasterized=False)
+            cs = plt.pcolor(x, y, dmap.T, vmin=0.02, vmax=0.12, cmap='inferno', linewidth=0, rasterized=False)
         cs.cmap.set_under([0.8, 0.8, 0.8])
         cs.cmap.set_over([0.8, 0.8, 0.8])
         #mindepth=np.argmin(dmap.T)
         #maxdepth=np.argmax(dmap.T)
-        
+
         cb = plt.colorbar(cs,ticks=[mindepth, mindepth+(maxdepth-mindepth)/6, mindepth+2*(maxdepth-mindepth)/6,mindepth+3*(maxdepth-mindepth)/6,mindepth+4*(maxdepth-mindepth)/6,mindepth+5*(maxdepth-mindepth)/6,maxdepth])
 
         #cb.set_label('Maximum map between ' + str(mindepth)+' and ' + str(maxdepth)+' (km)', size=30)
@@ -227,29 +223,29 @@ class ccp_volume(object):
             cb.set_label('Depth of 660 (km)', size=12)
         cb.ax.tick_params(labelsize=10)
         #cb.set_label('Amplitude')
-        
+
         # Label region and conversion at top.
         r_lon=np.max(self.VOL['grid_lon'])-0.4
         r_lat=np.max(self.VOL['grid_lat'])-0.4
-        x, y = m(r_lon, r_lat)  
-        plt.text(x, y,region,fontsize=10,ha='right',va='top',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
-        
+        x, y = m(r_lon, r_lat)
+        plt.text(x, y,'region',fontsize=10,ha='right',va='top',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
+
         c_lon=np.min(self.VOL['grid_lon'])+0.4
         c_lat=np.max(self.VOL['grid_lat'])-0.4
-        x, y = m(c_lon, c_lat)  
-        plt.text(x, y,conversion,fontsize=10,ha='left',va='top',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))         
-        
+        x, y = m(c_lon, c_lat)
+        plt.text(x, y,conversion,fontsize=10,ha='left',va='top',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
+
         # Label median and variance at bottom.
         med_lon=np.min(self.VOL['grid_lon'])+0.4
         med_lat=np.min(self.VOL['grid_lat'])+0.4
-        x, y = m(med_lon, med_lat)  
+        x, y = m(med_lon, med_lat)
         plt.text(x, y,med_str,fontsize=10,ha='left',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
-        
+
         var_lon=np.max(self.VOL['grid_lon'])-0.4
         var_lat=np.min(self.VOL['grid_lat'])+0.4
-        x, y = m(var_lon, var_lat)  
-        plt.text(x, y,var_str,fontsize=10,ha='right',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))         
-               
+        x, y = m(var_lon, var_lat)
+        plt.text(x, y,var_str,fontsize=10,ha='right',va='bottom',color='black', bbox=dict(facecolor='white', edgecolor='black', pad=3.0))
+
 
         # cb.set_ticks([380,400,420,440])
         cb.solids.set_rasterized(True)
@@ -269,7 +265,7 @@ class ccp_volume(object):
         # Plots topography of maximum between mindepth and maxdepth, masking if sum of weights is beneath mincoverage.
         # window buffer at end of depth array to not pick.
         wb=5
-   
+
         plt.figure(figsize=(10, 8))
         depths = self.VOL['grid_depth']
         print(depths)
@@ -279,8 +275,7 @@ class ccp_volume(object):
         # thickness = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
         dmap = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
         # coverage = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
-        
-        amparray=[]
+
         for i in range(len(self.VOL['grid_lon'])):
             for j in range(len(self.VOL['grid_lat'])):
 
@@ -290,22 +285,22 @@ class ccp_volume(object):
                 std = 1.96*np.sqrt(self.VOL['volumesigma'][i, j,:]/(self.VOL['volumeweight'][i, j,:]*self.VOL['volumeweight'][i, j,:]))
                 maxmap410 = np.argmax(RF[l410])
                 maxmap660 = np.argmax(RF[l660])
-                
+
                 if depths[l410[maxmap410]] > depths[l410[wb-1]] and depths[l410[maxmap410]] < depths[l410[-wb]] and depths[l660[maxmap660]] > depths[l660[wb-1]] and depths[l660[maxmap660]] < depths[l660[-wb]]:
                     if self.VOL['volumeweight'][i, j, l410[maxmap410]] >= mincoverage:
                         if RF[l410[maxmap410]] > std[l410[maxmap410]] and RF[l660[maxmap660]] > std[l660[maxmap660]]:
                             dmap[i, j] = depths[l660[maxmap660]]-depths[l410[maxmap410]]
-        
+
         dmapall = np.ravel(dmap)
-        
+
         l = [l for l in range(len(dmapall)) if dmapall[l] > 210+1. and dmapall[l] < 290 - 1.]
-        
+
         median=         round(np.median((dmapall[l]))*100)/100
         variance=       round(np.var((dmapall[l]))*100)/100
-        
+
         med_str='med = ' + str(median)
         var_str='var = ' + str(variance)
-        
+
         print(med_str)
         print(var_str)
 
@@ -320,7 +315,7 @@ class ccp_volume(object):
         xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
         x, y = m(xx, yy)
 
-        #cs = plt.contourf(x, y, dmap.T, vmin=220.,levels=np.linspace(220., 280., 81.), cmap=cm.RdBu) 
+        #cs = plt.contourf(x, y, dmap.T, vmin=220.,levels=np.linspace(220., 280., 81.), cmap=cm.RdBu)
         cs = plt.pcolor(x, y, dmap.T, vmin=220., vmax=280., cmap=cm.RdBu, linewidth=0, rasterized=True)
 
 
@@ -339,21 +334,18 @@ class ccp_volume(object):
 
 
 
-    def plot_mtzwidth_write(self,name='Megavolume',filter='rff2',conversion='EU60',factor=2.):
+    def plot_mtzwidth_write(self,name='Megavolume',filter='rff2',conversion='EU60',factor=2., mincoverage=10.):
 
         #This routine is also used to make a txt file with the significant depths of the 410 and the 660
         depth410660_2SE = open('../CCP_volumes/' + name + '_' + conversion+ '_'+ str(filter)+'_'+str(int(factor))+ '_MTZ_2SE_depths.txt', 'w')
 
-        
+        wb=5
+
         # plt.figure(figsize=(18, 8))
         depths = self.VOL['grid_depth']
         l410 = [x for x in range(len(depths)) if depths[x] > 380 and depths[x] < 430]
         l660 = [x for x in range(len(depths)) if depths[x] > 630 and depths[x] < 700]
 
-
-        thickness1D = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
-        d4101D = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
-        d6601D = np.empty((len(self.VOL['grid_lon']), len(self.VOL['grid_lat'])))
         for i in range(len(self.VOL['grid_lon'])):
             for j in range(len(self.VOL['grid_lat'])):
 
@@ -365,28 +357,28 @@ class ccp_volume(object):
                 max660 = np.argmax(RF[l660])
                 maxamp410 = np.max(RF[l410])
                 maxamp660 = np.max(RF[l660])
-                
+
                 # Store thickness, pick significance
                 if RF[l410[max410]] > std[l410[max410]]:
                     sig_410=1
                 else:
                     sig_410=0
-                    
+
                 if RF[l660[max660]] > std[l660[max660]]:
                     sig_660=1
                 else:
-                    sig_660=0      
-                
+                    sig_660=0
+
 
                 COV410 = False; STD410 = False; WITHINLIM410 = False;  COV660 = False; STD660 = False; WITHINLIM660 = False
-                        
+
                 if self.VOL['volumeweight'][i,j,l410[max410]]>=mincoverage: COV410 = True
                 if self.VOL['volumeweight'][i,j,l660[max660]]>=mincoverage: COV660 = True
                 if RF[l410[max410]] > std[l410[max410]]                : STD410 = True
                 if RF[l660[max660]] > std[l660[max660]]                : STD660 = True
                 if depths[l410[max410]] > depths[l410[wb-1]] and depths[l410[max410]] < depths[l410[-wb]]: WITHINLIM410 = True
                 if depths[l660[max660]] > depths[l660[wb-1]] and depths[l660[max660]] < depths[l660[-wb]]: WITHINLIM660 = True
-       
+
                 if COV410 and WITHINLIM410 and COV660 and WITHINLIM660:
                     if STD410 and STD660:
                         depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
@@ -396,7 +388,7 @@ class ccp_volume(object):
                         depth410660_2SE.write(str(sig_410)+'\t')
                         depth410660_2SE.write(str(sig_660)+'\t')
                         depth410660_2SE.write(str(maxamp410)+'\t')
-                        depth410660_2SE.write(str(maxamp660)+'\n') 
+                        depth410660_2SE.write(str(maxamp660)+'\n')
 
                     elif STD660 and not STD410:
                         depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
@@ -404,19 +396,19 @@ class ccp_volume(object):
                         depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(depths[l660[max660]])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
-                        depth410660_2SE.write(str(sig_660)+'\t')                        
+                        depth410660_2SE.write(str(sig_660)+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
-                        depth410660_2SE.write(str(maxamp660)+'\n')                       
-                    
+                        depth410660_2SE.write(str(maxamp660)+'\n')
+
                     elif STD410 and not STD660:
                         depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
                         depth410660_2SE.write(str(self.VOL['grid_lon'][i])+'\t')
                         depth410660_2SE.write(str(depths[l410[max410]])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(sig_410)+'\t')
-                        depth410660_2SE.write(str('NaN')+'\t')                        
+                        depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(maxamp410)+'\t')
-                        depth410660_2SE.write(str('NaN')+'\n')  
+                        depth410660_2SE.write(str('NaN')+'\n')
 
                 if not COV410 and COV660 and WITHINLIM660:
                     if STD660:
@@ -425,10 +417,10 @@ class ccp_volume(object):
                         depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(depths[l660[max660]])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
-                        depth410660_2SE.write(str(sig_660)+'\t')                        
+                        depth410660_2SE.write(str(sig_660)+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
-                        depth410660_2SE.write(str(maxamp660)+'\n') 
-                            
+                        depth410660_2SE.write(str(maxamp660)+'\n')
+
                 if not COV660 and COV410 and WITHINLIM410:
                     if STD410:
                         depth410660_2SE.write(str(self.VOL['grid_lat'][j])+'\t')
@@ -436,13 +428,13 @@ class ccp_volume(object):
                         depth410660_2SE.write(str(depths[l410[max410]])+'\t')
                         depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(sig_410)+'\t')
-                        depth410660_2SE.write(str('NaN')+'\t')                        
+                        depth410660_2SE.write(str('NaN')+'\t')
                         depth410660_2SE.write(str(maxamp410)+'\t')
-                        depth410660_2SE.write(str('NaN')+'\n')  
+                        depth410660_2SE.write(str('NaN')+'\n')
 
 
 
-                    
+
         # # Prepare map
         # m = Basemap(projection='merc', llcrnrlat=np.min(self.VOL['grid_lat']), urcrnrlat=np.max(self.VOL['grid_lat']), llcrnrlon=np.min(self.VOL['grid_lon']), urcrnrlon=np.max(self.VOL['grid_lon']), lat_ts=20, resolution='i')
         # m.drawparallels(np.arange(np.min(self.VOL['grid_lat']), np.max(self.VOL['grid_lat']), 10.), labels=[0, 0, 0, 0])#[1,0,0,1])
@@ -462,7 +454,7 @@ class ccp_volume(object):
         # plt.title('MTZ width')
 
         #This routine is also used to make a txt file with the depth of the 410 and the 660
-        depth410660.close()
+        depth410660_2SE.close()
 
 
 #
@@ -473,7 +465,7 @@ class ccp_volume(object):
         # set volume lats and lons
         # window buffer at end of depth array to not pick.
         wb=5
-        
+
         if direction == 'NS':
             lon = lonorlat
             n = np.argmin(np.abs(self.VOL['grid_lon']-lon))
@@ -487,9 +479,6 @@ class ccp_volume(object):
             xends = [self.VOL['latmin'], self.VOL['latmax']]
 
 
-            lons = lon*np.ones_like(xaxis)
-            lats = xaxis
-
         if direction == 'EW':
             lat = lonorlat
             n = np.argmin(np.abs(self.VOL['grid_lat']-lat))
@@ -500,8 +489,6 @@ class ccp_volume(object):
             xlabel = 'longitude (dg)'
             xends = [self.VOL['lonmin'], self.VOL['lonmax']]
             yends = [lat, lat]
-            lons = xaxis
-            lats = lat*np.ones_like(xaxis)
 
         depths = self.VOL['grid_depth']
 
@@ -522,9 +509,9 @@ class ccp_volume(object):
 
                 else:
                     crossec[i, j] = 1000.
-     
 
-        
+
+
         plt.figure(figsize=(14, 8))
 
         plt.subplot(2, 2, 2)
@@ -541,7 +528,7 @@ class ccp_volume(object):
             x1, y1 = m(yends[0], xends[0])
             x2, y2 = m(yends[1], xends[1])
             m.plot([x1, x2], [y1, y2], color='r', linewidth=1, zorder=1)
-            
+
             x3, y3 = m(lon*np.ones(len(xaxis),), np.round(xaxis/10.)*10.)
             m.scatter(x3, y3, 80, xaxis, zorder=2)
         if direction == 'EW':
@@ -555,7 +542,7 @@ class ccp_volume(object):
         norm = 0.2/amplify
 
         # plot
-        
+
         plt.subplot(2, 2, 1)
 
         xx, yy = np.meshgrid(xaxis, depths)
@@ -573,10 +560,10 @@ class ccp_volume(object):
         plt.xlim(xends)
         plt.plot([min(xaxis), max(xaxis)], [410, 410], '--k', linewidth=0.2)
         plt.plot([min(xaxis), max(xaxis)], [660, 660], '--k', linewidth=0.2)
-        
+
         plt.subplot(2, 1, 2)
 
-        
+
         for t in np.arange(0, len(xaxis), 1):
 
             lx = [x for x in range(0, len(depths)) if (np.abs(w[x, t]) > mincoverage)]# and np.abs(vol_sig[x,t])>std[x,t]/1.96)]
@@ -600,7 +587,7 @@ class ccp_volume(object):
                 if depths[l410[max410]] > depths[l410[wb-1]] and depths[l410[max410]] < depths[l410[-wb]]:
                     if np.abs(RF3[l410[max410]])>std[l410[max410]]/norm: # /1.96:
                         plt.plot([xaxis[t]+0.1, 0.5*RF2[l410[max410]]+xaxis[t]], [depths[ind], depths[ind]], 'y', linewidth=4)
-            
+
             if len(l660) > 20:
                 max660 = np.argmax(RF3[l660])
                 ind = lx[l660[max660]]
@@ -652,7 +639,7 @@ class ccp_volume(object):
         crossec = []
         vol_sig = []
         w = []
- 
+
         dist = []
         for i in range(len(lats)):
             dist.append(haversine(lats[0], lons[0], [lats[i]], [lons[i]])/111194.)
@@ -675,7 +662,6 @@ class ccp_volume(object):
         w = np.array(w)
 
         xaxis = self.VOL['grid_lat']
-        xlabel = 'latitude (dg)'
         xends = [lon1, lon2]
         yends = [lat1, lat2]
 
@@ -697,7 +683,7 @@ class ccp_volume(object):
                             vol_sig[i, j] = 0.
                 else:
                     crossec[i, j] = 1000.
-                   
+
 
         plt.subplot(2, 2, 2)
         m = Basemap(projection='merc', llcrnrlat=self.VOL['latmin'], urcrnrlat=self.VOL['latmax'], llcrnrlon=self.VOL['lonmin'], urcrnrlon=self.VOL['lonmax'], lat_ts=20, resolution='i')
@@ -726,7 +712,7 @@ class ccp_volume(object):
         plt.xlim(xends)
         plt.plot([min(xaxis), max(xaxis)], [410, 410], '--k', linewidth=0.2)
         plt.plot([min(xaxis), max(xaxis)], [660, 660], '--k', linewidth=0.2)
-  
+
 
 
         # corrected by 3D model
@@ -736,7 +722,7 @@ class ccp_volume(object):
 
 
         ax=plt.subplot(2,1,2)
-        pos1 = ax.get_position() # get the original position 
+        pos1 = ax.get_position() # get the original position
         pos2 = [pos1.x0 , pos1.y0 ,  pos1.width/14*8, pos1.height]
         pos2 = [pos1.x0 , pos1.y0 ,  pos1.width, pos1.height]
         ax.set_position(pos2) # set a new position
@@ -767,7 +753,7 @@ class ccp_volume(object):
                 if depths[l410[max410]] > depths[l410[wb-1]] and depths[l410[max410]] < depths[l410[-wb]]:
                     if np.abs(RF3[l410[max410]])>std[l410[max410]]/norm: # /1.96:
                         plt.plot([dist[t]+0.1, 0.5*RF2[l410[max410]]+dist[t]], [depths[ind], depths[ind]], 'y', linewidth=4)
-            
+
             if len(l660) > 20:
                 max660 = np.argmax(RF3[l660])
                 ind = lx[l660[max660]]
@@ -804,6 +790,7 @@ class ccp_volume(object):
         else:
             ldisc = [x for x in range(len(depths)) if depths[x] > 370 and depths[x] < 450]
             disc = np.arange(370, 450, 2.)
+            ldisc2 = [x for x in range(len(depths)) if depths[x] > 620 and depths[x] < 700]
 
 
 
@@ -814,10 +801,9 @@ class ccp_volume(object):
         d410l = []
         for i in range(len(self.VOL['grid_lon'])):
             for j in range(len(self.VOL['grid_lat'])):
-                RF = self.VOL['volume'][i, j,:]
+                RF = self.VOL['volume'][i, j,:].copy()
                 for k in range(len(depths)):
                     if self.VOL['volumeweight'][i, j, k] > 0:
-                        RF.setflags(write=1)
                         RF[k] = RF[k]/self.VOL['volumeweight'][i, j, k]
 
                 std = 1.96*np.sqrt(self.VOL['volumesigma'][i, j,:]/(self.VOL['volumeweight'][i, j,:]*self.VOL['volumeweight'][i, j,:]))
@@ -837,7 +823,7 @@ class ccp_volume(object):
 
         d660l = np.array(d660l)
         d410l = np.array(d410l)
- 
+
         d660c = np.arange(620., 700., 2.)
         d410c = []
         err = []
@@ -854,7 +840,7 @@ class ccp_volume(object):
         for i in range(len(disc)):
             if weights[i] > 0:
                 moveout[i,:] = moveout[i,:]/float(weights[i])
-  
+
                 if d660:
                     max660 = np.argmax(moveout[i, ldisc])
                     discp.append(depths[ldisc[max660]])
@@ -869,30 +855,29 @@ class ccp_volume(object):
                     l660 = [x for x in range(len(depths)) if depths[x] > 620 and depths[x] < 700]
                     max660 = np.argmax(moveout[i, l660])
                     discp2.append(depths[l660[max660]])
-      
+
 
         ax = plt.subplot2grid((3, 6), (0, 0), colspan=5)
- 
+
         if d660:
             n, bins, patches = plt.hist(d660l, np.arange(620., 700., 2.), histtype='bar')
-            data = zip(bins+1., n) # +1 as the stack resolution is only at even values
             cmbl = plt.cm.get_cmap('bone_r')
             for d, p in zip(n, patches):
                 plt.setp(p, 'facecolor', cmbl(d/max(n)*0.6+0.2))
-            # f=open('histogram_660.txt','wb')
-            # np.savetxt(f,data,delimiter='\t')
-        else:
-            plt.hist(d410l, np.arange(370, 450, 2.), histtype='bar')
-        plt.ylabel('# of grid points')
-        plt.text(645, 180, 'a.', fontsize=12)
-        if d660:
-            # plt.xlabel('660 depth (km)')
+            plt.text(646, 180, 'a.', fontsize=12)
+            plt.gca().set_xticks([650, 660, 670, 680, 690])
             plt.xlim([645, 695])
         else:
-            plt.xlabel('410 depth (km)')
-            plt.xlim([395, 435])
+            n, bins, patches = plt.hist(d660l, np.arange(370., 450., 2.), histtype='bar')
+            cmbl = plt.cm.get_cmap('bone_r')
+            for d, p in zip(n, patches):
+                plt.setp(p, 'facecolor', cmbl(d/max(n)*0.6+0.2))
+            plt.text(386, 180, 'a.', fontsize=12)
+            plt.gca().set_xticks([390, 400, 410, 420, 430])
+            plt.xlim([385, 435])
+
+        plt.ylabel('# of grid points')
         plt.gca().set_yticks([0, 50, 100, 150, 200])
-        plt.gca().set_xticks([650, 660, 670, 680, 690])
         ax.spines['top'].set_visible(False)
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -911,19 +896,20 @@ class ccp_volume(object):
         if d660:
             plt.xlim([645, 695])
             plt.xlabel('660 depth (km)')
+            plt.text(646, 380, 'b.', fontsize=12)
         else:
-            plt.xlim([395, 435])
+            plt.xlim([385, 435])
             plt.xlabel('410 depth (km)')
+            plt.text(386, 380, 'b.', fontsize=12)
         plt.ylim([350, 750])
         plt.gca().invert_yaxis()
-        plt.text(646, 380, 'b.', fontsize=12)
         box = plt.gca().get_position()
         axcb = plt.axes([box.x0*1.05+box.width*1.05, box.y0+0.1, 0.01, box.height-0.2])
         cb = plt.colorbar(cs, cax=axcb, orientation='vertical')
         cb.set_ticks([-0.1, 0., .1])
         cb.set_label('relative amplitude')
-        
-        plt.suptitle(region + ' - ' + str(conversion))
+
+        plt.suptitle('region' + ' - ' + str(conversion))
 
 
 
