@@ -14,15 +14,15 @@ from obspy import read
 #########################
 # Set parameters for stack
 ########################
-name= 'CCP_WUS'
+name= 'CCP_South_Africa'
 rffilter='jgf1'  # RF used
 conversion='prem' # conversion use
 factor=2. # doubling the fresnel zone width
 newstack = True #Starting a new stack (True) or adding data to an old one (False)
-lonmin=12.
-lonmax=36.
+lonmin=11.
+lonmax=40.
 latmin=-36.
-latmax=-21.
+latmax=-14.
 depmin=60.
 depmax=1300.
 lonrez=(lonmax-lonmin)*2.+1. # every 0.5 degrees
