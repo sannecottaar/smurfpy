@@ -31,8 +31,8 @@ for filename in piercelist:
 
     for line in rd.readlines():
         val = line.split()
-        lonpp.append(float(val[4]))
-        latpp.append(float(val[3]))
+        lonpp.append(float(val[2]))
+        latpp.append(float(val[1]))
 
     rd.close()
 
