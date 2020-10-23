@@ -24,7 +24,7 @@ if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
     print('                       decon algorithm (usually iterative decon - default)')
     print('Outputs:               Adds computed RF to pre-existing PICKLE waveform file\n')
     print('Usage:                 >> python3 5_compute_receiver_functions.py filterband')
-    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
     print('-----------------------------------------------------------------------------------------------------------------------')
     print('\n')
     sys.exit()
