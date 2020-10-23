@@ -14,9 +14,24 @@ import numpy as np
 import subprocess
 from obspy.taup import TauPyModel
 
+# Command line help
+if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Convert RF from time to depth using 1D model (coded for Prem)')
+    print('Inputs:                Filter band, 1D velocity model')
+    print("Outputs:               Adds dictionary seis[0].conversions['<nameof1Dmodel>'] to each Pickle file\n")
+    print('Usage:                 >> python3 convert_to_depth_obspy.py filterband')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
+
 PREM=True
 ak135=False
-rffilter='jgf1'
+rffilter=str(sys.argv[1])
 
 if PREM:
     mod_1D='prem'
