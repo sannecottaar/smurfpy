@@ -25,7 +25,7 @@ if len(sys.argv) != 4 or str(sys.argv[1]).lower() == 'help':
     print('Description:           Calculate converted phase pierce points at discontinuity depths')
     print('Inputs:                Depth of piercepoints, Phase, filter band, 1D velocity model')
     print('Outputs:               Adds PP for given phase and discont depth to each Pickle file, prints to file')
-    print('                       PP_DEPTHkm_PHASE_FILTER.txt')
+    print('                       PP_DEPTHkm_PHASE_FILTER.txt\n')
     print('Usage:                 python3 calculate_pierce_points.py depth phase filter')
     print('Format [1]:            depth (km) [int]')
     print('Format [2]:            seismic phase [str]')
