@@ -13,7 +13,7 @@ if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
     print('Description:           [OPTIONAL] Plots the perstation distribution of "Acceptable - Green" and "Removed - red" events')
     print('                       as a funciton of EQ magnitude and epicentral distance.')
     print('Inputs:                Data directory (usually ../Data/)')
-    print('Outputs:               On-screen plotting')
+    print('Outputs:               On-screen plotting\n')
     print('Usage:                 >> python3  7_plot_data_selection.py filterband')
     print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
     print('-----------------------------------------------------------------------------------------------------------------------')
