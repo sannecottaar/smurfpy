@@ -19,8 +19,9 @@ if len(sys.argv) < 2 or str(sys.argv[1]).lower() == 'help':
     print('                       predicted times are added to waveform header information (python dictionary)')
     print('Inputs:                Data directory (usually ../Data/), 1D velocity model, phases to compute TTs for')
     print('Outputs:               Overwrites files from above with new dictionary (seis[0].stats.traveltimes)\n')
-    print('Usage:                 >> python3 3_add_travel_times.py P S P660s P410s')
+    print('Usage:                 >> python3 3_add_travel_times.py phase_1 phase_2 phase_n
     print('Format [1,2,...,n]:    Any phase names as str')
+    print('Reccomended:           >> python3 3_add_travel_times.py P S P660s P410s')
     print('-----------------------------------------------------------------------------------------------------------------------')
     print('\n')
     sys.exit()
