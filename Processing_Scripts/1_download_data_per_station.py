@@ -31,7 +31,22 @@ import os.path
 import obspy.geodetics.base
 import numpy as np
 import obspy.geodetics
+import sys
 
+if len(sys.argv) > 1:
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           select and download appropriate events and stations based on user inputs')
+    print('Inputs:                search area lat/lon, start and end times (in function), epicentral dist of ev/station,')
+    print('                       event magnitude range, trace length, data filter band, station networks to search, dataclient')
+    print('Outputs:               python stream objects in PICKLE format with a dictionary of header info for each event.')
+    print('                       Saves to ../Data/NT.STA/Originals/\n')
+    print('Usage:                 >> python3 1_download_data_per_station.py')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 def download_data(start, end):
     # Load IRIS client. If using another client (e.g. RESIF, GEOFON...) edit dataclient 
