@@ -33,6 +33,7 @@ import numpy as np
 import obspy.geodetics
 import sys
 
+# Command line help
 if len(sys.argv) > 1:
     print('\n')
     print('-----------------------------------------------------------------------------------------------------------------------')
