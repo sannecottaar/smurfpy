@@ -9,7 +9,7 @@ if __name__ == "__main__":
     print('-----------------------------------------------------------------------------------------------------------------------')
     print(sys.argv[0])
     print('-----------------------------------------------------------------------------------------------------------------------')
-    print('Description:           Various RF algorithms: water level deconvolution, multitaper, iterative deconvolution')
+    print('Description:           Various RF algorithms: water level deconvolution, multitaper, iterative deconvolution\n')
     print('Usage:                 called from 5_compute_receiver_function.py')
     print('Usage:                 >> python3 5_compute_receiver_functions.py filterband')
     print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5')
