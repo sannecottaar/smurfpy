@@ -18,6 +18,29 @@ from obspy.core import trace
 import os.path
 import glob
 import numpy as np
+import sys
+
+# Command line help
+if len(sys.argv) != 2 or str(sys.argv[1]) == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Removes low quality ones based on set criteria:')
+    print('                           1. Minimum percentage of radial compoment to be fit (after reconvolving the RF with the')
+    print('                           vertical component (fitmin)')
+    print('                           2. Peak amplitude max threshold before main P-wave arrival (noisebefore)')
+    print('                           3. Peak amplitude max threshold after main P-wave arrival (noiseafter)')
+    print('                           4. Peak amplitude min threshold after main P-wave arrival (minamp)')
+    print('Inputs:                Data directory (usually ../Data/), horizontal component (usually radial), filter band,')
+    print('                       SNR calculation type, fitmin, noisebefore, noiseafter, minamp')
+    print('Outputs:               Two ".dat" files specific to the chosen filter band recording the good RF files and the good')
+    print('                       RF file SNR ratios (V & R components)')
+    print('Usage:                 >> python3 6_auto_select_receiver_functions.py  filterband')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 # negative length of file name in characters +1
 #****
@@ -25,7 +48,7 @@ file_char_len = -42
 #****
 direc = '../Data'
 flag = 'SV'
-filt = 'jgf1'
+filt = str(sys.argv[1])
 count = 0
 
 # set noise criteria
