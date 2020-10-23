@@ -11,11 +11,27 @@ import os.path
 import glob
 import numpy as np
 import receiver_function as rf
+import sys
 
+# Command line help
+if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           compute receiver functions using various algorithms in different frequency bands')
+    print('Inputs:                Data directory (usually ../Data/), horizontal component (usually radial), filter band,')
+    print('                       decon algorithm (usually iterative decon - default)')
+    print('Outputs:               Adds computed RF to pre-existing PICKLE waveform file\n')
+    print('Usage:                 >> python3 5_compute_receiver_functions.py filterband')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 direc = '../Data'
 flag = 'SV'  # Radial (SV) or tranverse (ST) RF to compute
-filt = 'jgf1'  # Define frequency range
+filt = str(sys.argv[1])  # Define frequency range
 
 if filt == 'jgf1':
     # Uses gaussian pulses when making receiver functions

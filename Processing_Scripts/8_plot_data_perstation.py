@@ -6,15 +6,28 @@ import time
 import glob
 import numpy as np
 from obspy import UTCDateTime
+import sys
+
+# Command line help
+if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           [OPTIONAL] Plots V,R,RF as a function of time and epicentral distance.')
+    print('Inputs:                Data directory (usually ../Data/), horizontal component (usually radial), filter band')
+    print('Outputs:               On-screen plotting\n')
+    print('Usage:                 >> python3 8_plot_data_perstation.py filterband')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 direc = '../Data'
 flag = 'SV'
-filt = 'jgf1'
-
-
+filt = str(sys.argv[1])
 
 stadirs = glob.glob(direc+'/*')
-
 
 for stadir in stadirs:
     print(stadir)

@@ -16,6 +16,25 @@ from obspy import read
 import os, sys, glob
 import subprocess
 
+# Command line help
+if len(sys.argv) != 4 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Calculate converted phase pierce points at discontinuity depths')
+    print('Inputs:                Depth of piercepoints, Phase, filter band, 1D velocity model')
+    print('Outputs:               Adds PP for given phase and discont depth to each Pickle file, prints to file')
+    print('                       PP_DEPTHkm_PHASE_FILTER.txt\n')
+    print('Usage:                 python3 calculate_pierce_points.py depth phase filter')
+    print('Format [1]:            depth (km) [int]')
+    print('Format [2]:            seismic phase [str]')
+    print('Options [3]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+    print('Recommended:           python3 calculate_pierce_points.py 410 P410s jgf1')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
+
 PREM=True
 ak135=False
 if PREM:

@@ -8,6 +8,22 @@ from obspy import read
 import matplotlib.pyplot as plt
 import glob
 import numpy as np
+import sys
+
+# Command line help
+if len(sys.argv) > 1:
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           [OPTIONAL] plot Z-R-T seismogram components with predicted arrival times after initial')
+    print('                       processing, before RF creation')
+    print('Inputs:                Data directory (usually ../Data/), station directory')
+    print('Outputs:               On-screen plotting\n')
+    print('Usage:                 >> python3 4_plot_data_preRF_perstation.py')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 direc = '../Data'
 stadirs = glob.glob(direc + '/*')

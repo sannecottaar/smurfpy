@@ -1,6 +1,21 @@
 import numpy as np
 import cmath
 import warnings
+import sys
+
+# Command line help
+if __name__ == "__main__":
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Various RF algorithms: water level deconvolution, multitaper, iterative deconvolution\n')
+    print('Usage:                 called from 5_compute_receiver_function.py')
+    print('Usage:                 >> python3 5_compute_receiver_functions.py filterband')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 # Download spectrum for multitaper, extended_multitaper_noise,
 # extended_multitaper_vs2, sum_multi_tapers: pip install spectrum
