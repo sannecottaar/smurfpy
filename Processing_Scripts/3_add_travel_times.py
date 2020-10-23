@@ -10,7 +10,7 @@ import sys
 from obspy.taup import TauPyModel
 
 # Command line help
-if len(sys.argv) < 2 or str(sys.argv[1]) == 'help':
+if len(sys.argv) < 2 or str(sys.argv[1]).lower() == 'help':
     print('\n')
     print('-----------------------------------------------------------------------------------------------------------------------')
     print(sys.argv[0])
