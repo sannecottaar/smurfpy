@@ -20,6 +20,24 @@ import os.path
 import glob
 import shutil
 import os
+import sys
+
+# Command line help
+if len(sys.argv) > 1:
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Preprocessing for RF calculation: merges truncations, trims, downsamples,')
+    print('                       rotates components Z-R-T, renames based on BAZ and EPI-DIST.')
+    print('Inputs:                Data directory (usually ../Data/)')
+    print('Outputs:               python stream objects in PICKLE format with a dictionary of header info for each event in a')
+    print('                       new folder leaving a copy of the unprocessed original data for future use')
+    print('                       Saves to ../Data/NT.STA/Processed_originals/\n')
+    print('Usage:                 >> python3 2_rotate_data_NE_RT.py	')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 no_trace = 0
 no_z = 0
