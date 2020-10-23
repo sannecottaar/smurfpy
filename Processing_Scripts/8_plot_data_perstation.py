@@ -18,7 +18,7 @@ if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
     print('Inputs:                Data directory (usually ../Data/), horizontal component (usually radial), filter band')
     print('Outputs:               On-screen plotting')
     print('Usage:                 >> python3 8_plot_data_perstation.py filterband')
-    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
     print('-----------------------------------------------------------------------------------------------------------------------')
     print('\n')
     sys.exit()
