@@ -15,10 +15,24 @@ import glob
 import numpy as np
 from geographiclib.geodesic import Geodesic as geo
 from scipy.interpolate import interp1d
-import matplotlib.pyplot as plt
+
+# Command line help
+if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           [OPTIONAL] Converts RF from time to depth using 3D model and appropriate crustal model.')
+    print('                       3D model example is AFRP20 (Boyce et al., 2020 Gcubed). Also accounts for 3D crustal model')
+    print('                       (See Boyce et al., 2020 supplementary material) and station elevation.\n')
+    print('Usage:                 >> python3 dep_conv_AFR_AFRP20CR_AK135.py filterband')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 ak135=True
-rffilter='jgf1'
+rffilter=str(sys.argv[1])
 
 if ak135:
     taupmodel = TauPyModel(model='ak135') # Could change to AK135 to setup in accordance with AFRP20
