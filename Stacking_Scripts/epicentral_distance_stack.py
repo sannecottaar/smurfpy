@@ -26,44 +26,63 @@ import glob,os
 import numpy as np
 from shapely.geometry import Point, Polygon
 from matplotlib import gridspec
-
+import sys
 file_char_len = -51
 #----------------------------------------User Interface-------------------
 
+
+# Command line help
+if len(sys.argv) != 10 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Stacks the RFs in bins of epicentral distance to show the most prominent features,')
+    print('Inputs:                bin_size , smoothing, lon/lat box, epi_dist_limits, filter band')
+    print('Outputs:               Epicentral distance stack plot)\n')
+    print('Usage:                 >> python3 epicentral_distance_stack.py bin_size smoothing lonmin lonmax latmin latmax min_epi max_epi rffilter')
+    print('Format                 1: [int], 2: [bool], 3-8: [int], 9: [str]')
+    print('Recommended:           >> python3 epicentral_distance_stack.py 5 False -179 179 -89 89 30 90 jgf1')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
+
+
 # Initial options
+bin_size = int(sys.argv[1])      # in degrees
+smoothing = bool(str(sys.argv[2]))  # adds in neighbouring bins
+lonmin = int(sys.argv[3]) 
+lonmax = int(sys.argv[4]) 
+latmin = int(sys.argv[5]) 
+latmax = int(sys.argv[6])
+min_epi = int(sys.argv[7]) 
+max_epi = int(sys.argv[8])
+rffilter=str(sys.argv[9])
 
-bin_size = 5      # in degrees
-smoothing = False # adds in neighbouring bins
-plot_histogram = True  # plot histogram of data covarage
-
-# Get depth of piercepoints and Pds phase to select data by
-
-depth = 410
 
 # Lat and Lon constraints, piercepoints within this box will be accepted 
-lat1 = 89.
-lon1 = -179.
+lat1 = latmax
+lon1 = lonmin
 lat2 = lat1
-lon2 = 179.
-lat3 = -89.
+lon2 = lonmax
+lat3 = latmin
 lon3 = lon2
 lat4 = lat3
 lon4 = lon1
 
 box = Polygon([(lat1,lon1),(lat2,lon2),(lat3,lon3),(lat4,lon4)])
 
-# Plotting Travel Time Curves
-plot_travel_time_curves = True
+# Recommended settings
+depth = 410 # Depth of piercepoints and Pds phase to select data by
+plot_histogram = True  # plot histogram of data covarage
+plot_travel_time_curves = True # Plotting Travel Time Curves
 phases_to_plot  = ['PP', 'P410s', 'P660s']
-
 
 #----------------------------------------Set up the arrays for the STACK a
 
 # Define min/max epi dist and no. steps
 step = bin_size
 epi_steps = (60//step)+1
-min_epi = 30
-max_epi = 90
 epi_range = np.linspace(min_epi, max_epi, epi_steps)
 
 # Set up stack ( matrix [len of RF x no of bins ])
@@ -85,7 +104,7 @@ countwrong = 0
 
 # Set up
 direc = '../Data'
-filt = 'jgf1'
+filt = rffilter
 stadirs = glob.glob(direc + '/*')
 
 # Loop through stations

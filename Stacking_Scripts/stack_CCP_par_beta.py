@@ -3,7 +3,7 @@
 # Uses routines from common_converion_point_stack.
 # Needs a directory '../CCP_Volumes'
 
-
+#----------------------------------------------------#
 import common_conversion_point_stack_par_beta as CCP_stack
 import os, glob
 import time
@@ -14,24 +14,37 @@ import numpy as np
 import msgpack
 import msgpack_numpy as m
 m.patch()
-#########################
-# Set parameters for stack
-########################
-#name= 'CCP_' + region + '_Data'
 
-data_loc = '../Data/'
-name= 'PAR_CCP_'
-conversion='prem'
-rffilter='jgf1'  # RF used
-cores=12
+#----------------------------------------------------#
 
-factor=2. # doubling the fresnel zone width
+# Command line help
+if len(sys.argv) != 11 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Wrapper for the function contained within common_conversion_point_stack_par_beta.py')
+    print('Inputs:                depth conversion, lon/lat box, filter band')
+    print('Outputs:               Common conversion point stack volume (PICKLE)\n')
+    print('Usage:                 >> python3 stack_CCP_par_beta.py conversion lonmin lonmax latmin latmax rffilter newstack cores')
+    print('Format                 1,2: [str], 3-6: [float], 7: [str], 8: [float], 9: [bool], 10: [int]')
+    print('Recommended:           >> python3 stack_CCP_par_beta.py CCP_Global prem -179.0 179.0 -89.0 89.0 jgf1 2.0 True 12')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
-newstack = True #Starting a new stack (True) or adding data to an old one (False)
-lonmin=-130.
-lonmax=-100.
-latmin=20.
-latmax=50.
+# Initial options
+name = str(sys.argv[1])
+conversion = str(sys.argv[2]) # conversion use
+lonmin = float(sys.argv[3]) 
+lonmax = float(sys.argv[4]) 
+latmin = float(sys.argv[5]) 
+latmax = float(sys.argv[6])
+rffilter=str(sys.argv[7])  # RF filter used
+factor = float(sys.argv[8])  # e.g. 2.0 to double the fresnel zone width
+newstack = bool(str(sys.argv[9])) #Starting a new stack (True) or adding data to an old one (False)
+cores = int(sys.argv[10])
+
 depmin=60.
 depmax=1300.
 lonrez=(lonmax-lonmin)*2.+1. # every 0.5 degrees

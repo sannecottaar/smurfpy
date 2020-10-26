@@ -8,7 +8,7 @@ Requires previous running of depth_stack.py and slowness_stack.py
 Edit filts, num_rfs, conversion below (lines 32, 33, 37).
 '''
 
-#Import all the relevant modules
+#------------Import all the relevant modules------------------#
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +17,7 @@ from matplotlib import gridspec
 from scipy.signal import find_peaks
 import compute_conversions
 import matplotlib.pylab as pylab
-import os
+import os,sys
 
 #Set figure parameters
 params = {'legend.fontsize': 'x-large',
@@ -28,18 +28,44 @@ params = {'legend.fontsize': 'x-large',
              'ytick.labelsize':'x-large'}
 pylab.rcParams.update(params)
 
-#Create iterable list of filters and number of rfs in depth and slowness stacks
-filt = "jgf1"
-num_rfs = 339
+#------------------------------------------------------------#
 
-lat1 = 89
-lon1 = -179
-lat2 = -89
-lon2 = 179
+# Command line help
+if len(sys.argv) != 8 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Combines previously calculated depth and slowness stack in one figure.')
+    print('Inputs:                Depth and slowness stack pickle files')
+    print('Outputs:               Combined depth and slowness stack image pdf/png)\n')
+    print('Usage:                 >> python3 depth_stack.py conversion lonmin lonmax latmin latmax rffilter num_rfs')
+    print('Format                 1: [str], 2-5: [int], 6: [str], 7: [int]')
+    print('Recommended:           >> python3 depth_slowness_stack.py prem -179 179 -89 89 jgf1 339')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
+
+
+# Initial options
+conv = str(sys.argv[1])
+lonmin = int(sys.argv[2]) 
+lonmax = int(sys.argv[3]) 
+latmin = int(sys.argv[4]) 
+latmax = int(sys.argv[5])
+rffilter=str(sys.argv[6])
+num_rfs = int(sys.argv[7])
+
+
 
 #Set some values
 direc='../'
-conversion='prem'
+conversion = conv
+filt = rffilter
+lat1 = latmax
+lon1 = lonmin
+lat2 = latmin
+lon2 = lonmax
 
 #Set place to save output files (plot and pickle of stack)
 savedir=direc+'Final_Figures/'

@@ -18,7 +18,7 @@ For PREM conversions use Migration_Scripts/convert_to_depth_obspy.py
 from obspy import read
 import matplotlib.pyplot as plt
 import os.path
-import glob
+import glob, sys
 import numpy as np
 import pickle
 from scipy import interpolate
@@ -34,15 +34,43 @@ params = {'legend.fontsize': 'x-large',
          'ytick.labelsize':'x-large'}
 pylab.rcParams.update(params)
 
-#Set some values
-direcs=glob.glob('../Data/*')
-filt = 'jgf1' # RF type to use
-conversion = 'prem' # Converstion to use
+# -----------------------------------------------------
 
+
+# Command line help
+if len(sys.argv) != 7 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Stacks all the RFs within the bounds for the depth stated producing one trace.')
+    print('Inputs:                depth conversion, lon/lat box, filter band')
+    print('Outputs:               Depth stack pickle file and pdf/png)\n')
+    print('Usage:                 >> python3 depth_stack.py conversion lonmin lonmax latmin latmax rffilter')
+    print('Format                 1: [str], 2-5: [int], 6: [str]')
+    print('Recommended:           >> python3 depth_stack.py prem -179 179 -89 89 jgf1')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
+
+# Initial options
+conv = str(sys.argv[1])
+lonmin = int(sys.argv[2]) 
+lonmax = int(sys.argv[3]) 
+latmin = int(sys.argv[4]) 
+latmax = int(sys.argv[5])
+rffilter=str(sys.argv[6])
+
+filt = rffilter # RF type to use
+conversion = conv # Converstion to use
+
+# Recommended settings
 norm_depth = 150 # depth beyond which to normalize
 norm_fact = 0.2 # Normalization factor
+dp = 410  # Depth of piercepoints and Pds phase to select data by
 
-#Make directories for outputs
+#Set directories for inputs / outputs
+direcs=glob.glob('../Data/*')
 savedir='../Depth_Stacks/'
 if not os.path.exists(savedir):
     os.makedirs(savedir)
@@ -50,13 +78,12 @@ savepath=savedir+conversion
 if not os.path.exists(savepath):
     os.makedirs(savepath)
 
-#Define constraints
-dp = 410
-lat1 = 89.
-lon1 = -179.
+# Lat and Lon constraints, piercepoints within this box will be accepted 
+lat1 = latmax
+lon1 = lonmin
 lat2 = lat1
-lon2 = 179.
-lat3 = -89.
+lon2 = lonmax
+lat3 = latmin
 lon3 = lon2
 lat4 = lat3
 lon4 = lon1
