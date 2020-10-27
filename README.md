@@ -67,7 +67,7 @@ Invalid use of a script will also return the help information
 • Description:
 • Inputs: Data directory (usually ../Data/), horizontal component (usually radial), filter band, decon algorithm (usually iterative decon - default)
 • Outputs: Adds computed RF to pre-existing PICKLE waveform file
-• Usage: >> python3 5_compute_receiver_functions.py      
+• Usage: >> python3 5_compute_receiver_functions.py jgf1    
 
 # 6_auto_select_receiver_functions.py  
 • Description: Removes low quality ones based on set criteria: 
@@ -77,19 +77,19 @@ Invalid use of a script will also return the help information
         4. Peak amplitude min threshold after main P-wave arrival (minamp)
 • Inputs: Data directory (usually ../Data/), horizontal component (usually radial), filter band, SNR calculation type, fitmin, noisebefore, noiseafter, minamp
 • Outputs: Two ".dat" files specific to the chosen filter band recording the good RF files and the good RF file SNR ratios (V & R components)
-• Usage: >> python3 6_auto_select_receiver_functions.py
+• Usage: >> python3 6_auto_select_receiver_functions.py jgf1
 
 # 7_plot_data_selection.py
 • Description: [OPTIONAL] Plots the perstation distribution of "Acceptable - Green" and "Removed - red" events as a funciton of EQ magnitude and epicentral distance.
 • Inputs: Data directory (usually ../Data/)
 • Outputs: On-screen plotting
-• Usage: >> python3 7_plot_data_selection.py
+• Usage: >> python3 7_plot_data_selection.py jgf1
 
 # 8_plot_data_perstation.py
 • Description: [OPTIONAL] Plots V,R,RF as a function of time and epicentral distance.
 • Inputs: Data directory (usually ../Data/), horizontal component (usually radial), filter band
 • Outputs: On-screen plotting
-• Usage: python3 8_plot_data_perstation.py
+• Usage: python3 8_plot_data_perstation.py jgf1
 
 
 ---------------------------------------------------------------------------------
@@ -107,12 +107,13 @@ Invalid use of a script will also return the help information
 • Description: Convert RF from time to depth using 1D model (coded for Prem)
 • Inputs: Filter band, 1D velocity model
 • Outputs: Adds dictionary seis[0].conversions['<nameof1Dmodel>'] to each Pickle file
-• Usage: python3 convert_to_depth_obspy.py
+• Usage: python3 convert_to_depth_obspy.py jgf1
 
 # dep_conv_AFR_AFRP20CR_AK135.py
 • [OPTIONAL] As above but based on ak135 depths, converts RF from time to depth using 3D model and appropriate crustal model
 • 3D model example is AFRP20 (Boyce et al., 2020 Gcubed)
 • Also accounts for 3D crustal model (See Boyce et al., 2020 supplementary material) and station elevations.
+• Usage: python3 dep_conv_AFR_AFRP20CR_AK135.py jgf1
 
 
 ---------------------------------------------------------------------------------
