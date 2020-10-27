@@ -29,6 +29,7 @@ README last updated by: A. Boyce, 27/10/20
 -----------------------------------------------------------------------
     
 For help with a script, use the command line argument 'help'. E.g. >> python3 1_download_data.py help
+
 Invalid use of a script will also return the help information
 
 ---------------------------------------------------------------------------------
