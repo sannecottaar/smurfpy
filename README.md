@@ -5,7 +5,7 @@ toolbox utilizing receiver functions in python3
 Contributors: Sanne Cottaar, Jennifer Jenkins, Stephen Pugh, Alistair Boyce, Matthew Kemp, Annemijn van Stiphout, Kieran Gilmore, and others
 
 
-README last updated by: A. Boyce, 12/10/20
+README last updated by: A. Boyce, 27/10/20
 
 -----------------------------------------------------------------------
 --------------------------- OUTLINE -----------------------------------
@@ -21,8 +21,8 @@ README last updated by: A. Boyce, 12/10/20
     --> Plot Pierce points, CCP stack volumes (weights, Maps, XC etc)
 5. Tools
     --> Misc tools (inc velocity models)
-6. Travel_Times_Slowness
-    --> Reference travel time files for slowness stacking
+6. South_Africa_Data
+    --> Test dataset from XA network in Southern Africa
 
 ---------------------------------------------------------------------------------
 --------------------------- Processing SCRIPTS ----------------------------------
@@ -85,7 +85,6 @@ README last updated by: A. Boyce, 12/10/20
 • Usage: python3 8_plot_data_perstation.py
 
 
-
 ---------------------------------------------------------------------------------
 --------------------------- MIGRATION SCRIPTS -----------------------------------
 ---------------------------------------------------------------------------------
@@ -107,7 +106,6 @@ README last updated by: A. Boyce, 12/10/20
 • [OPTIONAL] As above but based on ak135 depths, converts RF from time to depth using 3D model and appropriate crustal model
 • 3D model example is AFRP20 (Boyce et al., 2020 Gcubed)
 • Also accounts for 3D crustal model (See Boyce et al., 2020 supplementary material) and station elevations.
-
 
 
 ---------------------------------------------------------------------------------
@@ -183,12 +181,6 @@ README last updated by: A. Boyce, 12/10/20
 • Usage: python3 plot_CCP.py CCP_Global prem jgf1 2.0 2.0 COV 410
 
 ---------------------------------------------------------------------------------
-----------------------  Travel_Times_Slowness  ----------------------------------
----------------------------------------------------------------------------------
-
-Multiple reference travel-time files used in slowness stacking.
-
----------------------------------------------------------------------------------
 ----------------------         Tools           ----------------------------------
 ---------------------------------------------------------------------------------
 
@@ -204,6 +196,14 @@ Various models used for 1D and 3D depth stacking examples
 • Outputs: Pdf tomogrpahic model plot
 • Usage: python3 Africa_AFRP20_RF_CR1.py
 
+# /Travel_Times_Slowness/
+
+Multiple reference travel-time files used in slowness stacking.
+
+# /Moveout_with_epicentral_distance/
+
+Phase moveout files used in epicentral distance stacking.
+
 ---------------------------------------------------------------------------------
 ----------------------  South_Africa_Data      ----------------------------------
 ---------------------------------------------------------------------------------
@@ -212,6 +212,26 @@ Test data set for 45 stations in the XA network (doi:10.7914/SN/XA_1997)
 This data is unprocessed. 
 To use, copy directory to a new directory called "Data"
 Then proceed from script Processing_Scripts/2_rotate_data_NE_RT.py 
+
+---------------------------------------------------------------------------------
+----------------------  List of Python package versions -------------------------
+---------------------------- Most recently checked ------------------------------
+
+For a comparison of your current python modules to a checked working verison see:
+
+/Tools/check_import_versions.py
+
+--- Checked system package versions ---
+
+python 3.6.9 (default, Oct  8 2020, 12:12:24)
+[GCC 8.4.0]
+
+geographiclib 1.49
+matplotlib 3.0.3
+numpy 1.16.3
+obspy 1.1.1
+scipy 1.2.1
+shapely 1.6.4
 
 ---------------------------------------------------------------------------------
 ---------------------------------- References -----------------------------------
