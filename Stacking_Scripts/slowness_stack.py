@@ -1,5 +1,5 @@
 '''
-Slowness_Stack_Error_New.py
+slowness_stack.py
 Used to distinguish which signals in the time or depth against epicentral angle stack are converted phases and which signals are multiples.
 ---Multiples come from shallower angles, therefore the velocity is lower and the slowness is +ve wrt the direct P wave.
 ---Converted phases come from steeper angles, therefore the velocity is higher and the slowness is -ve wrt the direct P wave.
@@ -15,36 +15,57 @@ from obspy import read
 import matplotlib.pyplot as plt
 import os.path
 import time
-import glob
+import glob, sys
 import numpy as np
 import pickle
 from shapely.geometry import Point, Polygon
 
-#Array of zeros, slowness stack high and 2*length of RF wide
-#201 as 1 to -1 in steps of 0.01
-STACK = np.zeros([201,1751])
+# Command line help
+if len(sys.argv) != 6 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Plot of slowness against time, using a specfic epicentral reference distance.')
+    print('Inputs:                lon/lat box, filter band')
+    print('Outputs:               Slowness stack pickle file and pdf/png)\n')
+    print('Usage:                 >> python3 slowness_stack.py lonmin lonmax latmin latmax rffilter')
+    print('Format                 1-4: [int], 5: [str]')
+    print('Recommended:           >> python3 slowness_stack.py -179 179 -89 89 jgf1')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
-#Define epicentral distance reference
-epi_ref = 60 #Choose based upon epicentral distance range of data, mid-point is good first estimate
+# Initial options
+lonmin = int(sys.argv[1]) 
+lonmax = int(sys.argv[2]) 
+latmin = int(sys.argv[3]) 
+latmax = int(sys.argv[4])
+rffilter=str(sys.argv[5])
 
-#Define epicentral distance bounds
-epimin = 30 
-epimax = 90 
 
-#Define constraints
-depth = 410
-lat1 = 89.
-lon1 = -179.
+# Lat and Lon constraints, piercepoints within this box will be accepted 
+lat1 = latmax
+lon1 = lonmin
 lat2 = lat1
-lon2 = 179.
-lat3 = -89.
+lon2 = lonmax
+lat3 = latmin
 lon3 = lon2
 lat4 = lat3
 lon4 = lon1
 
 box = Polygon([(lat1,lon1),(lat2,lon2),(lat3,lon3),(lat4,lon4)])
-#Set some values
-filt = 'jgf1'
+
+
+#Array of zeros, slowness stack high and 2*length of RF wide
+#201 as 1 to -1 in steps of 0.01
+STACK = np.zeros([201,1751])
+# Recommended settings
+epi_ref = 60 #Choose epicentral distance reference based upon epicentral distance range of data, mid-point is good first estimate
+epimin = 30 
+epimax = 90 
+depth = 410
+filt = rffilter
 
 #Make directory for outputs
 savepath='../Slowness_Stacks'

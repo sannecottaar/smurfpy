@@ -3,7 +3,7 @@
 # Uses routines from common_converion_point_stack.
 # Needs a directory '../CCP_Volumes'
 
-
+#----------------------------------------------------#
 import common_conversion_point_stack as CCP_stack
 import glob
 import os
@@ -11,18 +11,35 @@ import time
 import sys
 from obspy import read
 
-#########################
-# Set parameters for stack
-########################
-name= 'CCP_South_Africa'
-rffilter='jgf1'  # RF used
-conversion='prem' # conversion use
-factor=2. # doubling the fresnel zone width
-newstack = True #Starting a new stack (True) or adding data to an old one (False)
-lonmin=11.
-lonmax=40.
-latmin=-36.
-latmax=-14.
+#----------------------------------------------------#
+
+# Command line help
+if len(sys.argv) != 10 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           Wrapper for the function contained within common_conversion_point_stack.py')
+    print('Inputs:                depth conversion, lon/lat box, filter band')
+    print('Outputs:               Common conversion point stack volume (PICKLE)\n')
+    print('Usage:                 >> python3 stack_CCP.py conversion lonmin lonmax latmin latmax rffilter newstack')
+    print('Format                 1,2: [str], 3-6: [float], 7: [str], 8: [float], 9: [bool]')
+    print('Recommended:           >> python3 stack_CCP.py CCP_Global prem -179.0 179.0 -89.0 89.0 jgf1 2.0 True')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
+
+# Initial options
+name = str(sys.argv[1])
+conversion = str(sys.argv[2]) # conversion use
+lonmin = float(sys.argv[3]) 
+lonmax = float(sys.argv[4]) 
+latmin = float(sys.argv[5]) 
+latmax = float(sys.argv[6])
+rffilter=str(sys.argv[7])  # RF filter used
+factor = float(sys.argv[8])  # e.g. 2.0 to double the fresnel zone width
+newstack = bool(str(sys.argv[9])) #Starting a new stack (True) or adding data to an old one (False)
+
 depmin=60.
 depmax=1300.
 lonrez=(lonmax-lonmin)*2.+1. # every 0.5 degrees
@@ -30,6 +47,10 @@ latrez=(latmax-latmin)*2.+1. # every 0.5 degrees
 deprez=(depmax-depmin)/2. # every 2 km
 
 script_start = time.time()
+# Make sure a CCP_volumes directory is present
+dirout='../CCP_volumes/'
+if not os.path.exists(dirout):
+    os.makedirs(dirout)
 
 ## Intialize stack or load latest stack
 CCP= CCP_stack.ccp_volume()#

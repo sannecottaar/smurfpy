@@ -96,7 +96,7 @@ class ccp_volume(object):
 # Plot data coverage map at predefined depth
 #
 
-    def plot_datacoverage(self,depth,name='Megavolume',filter='rff2', conversion='prem', factor=2.):
+    def plot_datacoverage(self,depth,name='Megavolume',conversion='prem',filter='jgf1', factor=2.):
 
         coverage_file = open('../CCP_volumes/' + name + '_' + str(depth) + '_weights_' + conversion + '_' + str(filter) + '_' +str(int(factor))+'.txt', 'w')
         fig = plt.figure(figsize=(6,6))
@@ -144,7 +144,7 @@ class ccp_volume(object):
 # Plot topography maps
 #
 
-    def plot_topography(self,mindepth,maxdepth,name='Megavolume',filter='rff2',conversion='prem',factor=2.,mincoverage=10., amplitude = True, blobs=True):
+    def plot_topography(self,mindepth,maxdepth,name='Megavolume',conversion='prem',filter='jgf1',factor=2.,mincoverage=10., amplitude = True, blobs=True):
         # Plots topography of maximum between mindepth and maxdepth, masking if sum of weights is beneath mincoverage.
         # If amplitude =True, it will plot the amplitude and not the depth
         # window buffer at end of depth array to not pick.
@@ -261,7 +261,7 @@ class ccp_volume(object):
 
 
 
-    def plot_mtzwidth(self,name='Megavolume',filter='rff2',conversion='EU60',factor=2., mincoverage=10.):
+    def plot_mtzwidth(self,name='Megavolume',conversion='prem',filter='jgf1',factor=2., mincoverage=10.):
         # Plots topography of maximum between mindepth and maxdepth, masking if sum of weights is beneath mincoverage.
         # window buffer at end of depth array to not pick.
         wb=5
@@ -334,7 +334,7 @@ class ccp_volume(object):
 
 
 
-    def plot_mtzwidth_write(self,name='Megavolume',filter='rff2',conversion='EU60',factor=2., mincoverage=10.):
+    def plot_mtzwidth_write(self,name='Megavolume',conversion='prem',filter='jgf1',factor=2., mincoverage=10.):
 
         #This routine is also used to make a txt file with the significant depths of the 410 and the 660
         depth410660_2SE = open('../CCP_volumes/' + name + '_' + conversion+ '_'+ str(filter)+'_'+str(int(factor))+ '_MTZ_2SE_depths.txt', 'w')
@@ -461,7 +461,7 @@ class ccp_volume(object):
 # Plot crossections
 #
 
-    def plot_crosssection(self, direction, lonorlat, amplify=1., name='Megavolume', filter='rff2', conversion='EU60', factor=2., zoom=False, mincoverage=10):
+    def plot_crosssection(self, direction, lonorlat, amplify=1., name='Megavolume',conversion='prem',filter='jgf1', factor=2., zoom=False, mincoverage=10):
         # set volume lats and lons
         # window buffer at end of depth array to not pick.
         wb=5
@@ -618,7 +618,7 @@ class ccp_volume(object):
 # Plot crossections
 #
 
-    def plot_crosssection_any(self, lon1,lon2,lat1,lat2,numpoints=200,amplify=1.,name='Megavolume',filter='rff2', conversion='EU60', factor=2.,zoom=False,mincoverage=10.):
+    def plot_crosssection_any(self, lon1,lon2,lat1,lat2,numpoints=200,amplify=1.,name='Megavolume',conversion='prem',filter='jgf1',factor=2.,zoom=False,mincoverage=10.):
         # set volume lats and lons
         # window buffer at end of depth array to not pick.
         wb=5
@@ -778,7 +778,7 @@ class ccp_volume(object):
 # Plot moveout aligned on 410 or 660
 #
 
-    def plot_moveout(self,d660=True,name='Megavolume',filter='rff2',conversion='EU60',factor=2.):
+    def plot_moveout(self,d660=True,name='Megavolume',conversion='prem',filter='jgf1',factor=2.):
     # Picks all profiles in grid and organizes them by 660 depth
         plt.figure(figsize=(8, 8))
         depths = self.VOL['grid_depth']

@@ -116,28 +116,28 @@ README last updated by: A. Boyce, 12/10/20
 
 # epicentral_distance_stack.py
 • Description: Stacks the RFs in bins of epicentral distance to show the most prominent features
-• Inputs: Bin size, smoothing, histogram, pierce point depth, alt/lon box, predicted travel time curves, epicentral distance range, filter band
+• Inputs: bin_size, smoothing, lon/lat box, epi_dist_limits, filter band
 • Outputs: Epicentral distance stack plot
-• Usage: python3 epicentral_distance_stack.py
+• Usage: python3 epicentral_distance_stack.py 5 False -179 179 -89 89 30 90 jgf1
 
 
 # depth_stack.py
 • Description: Stacks all the RFs within the bounds for the depth stated producing one trace.
-• Inputs: Data directory, filter band, conversion, normalisation depth & factor, pierce point depth and polygon.
+• Inputs: conversion, lon/lat box, filter band
 • Outputs: Depth stack pickle file and pdf/png
-• Usage: python3 depth_stack.py
+• Usage: python3 depth_stack.py prem -179 179 -89 89 jgf1
 
 # slowness_stack.py
 • Description: Plot of slowness against time, using a specfic epicentral reference distance.
-• Inputs: Data directory, filter band, epicentral distance nounds and reference, pierce point depth and polygon.
+• Inputs: lon/lat box, filter band
 • Outputs: Slowness stack pickle file and pdf/png
-• Usage: python3 slowness_stack.py
+• Usage: python3 slowness_stack.py -179 179 -89 89 jgf1
 
 # depth_slowness_stack.py
 • [OPTIONAL] Description: Combines previously calculated depth and slowness stack in one figure.
 • Inputs: Depth and slowness stack pickle files
 • Outputs: Combined depth and slowness stack image pdf/png
-• Usage: python3 depth_slowness_stack.py
+• Usage: python3 depth_slowness_stack.py prem -179 179 -89 89 jgf1 339
 
 # common_conversion_point_stack.py
 • Description: Common conversion point stacking routines (see Cottaar and Deuss, 2016). Calculates weighting factor based on Lekic et al., (2011, Science) based on distance and fresnel zone at given depth 
@@ -147,16 +147,16 @@ README last updated by: A. Boyce, 12/10/20
 
 # stack_CCP.py
 • Description: wrapper for the function contained within common_conversion_point_stack.py
-• Inputs: Name, filter band, conversion, smoothing factor, region, NewStack, CCP volume parameters
-• Outputs: Common conversion point stack
-• Usage: python3 stack_CCP.py
+• Inputs: Name, conversion, lon/lat box, filter band, smoothing factor, newstack
+• Outputs: Common conversion point stack volume (PICKLE)
+• Usage: python3 stack_CCP.py CCP_Global prem -179.0 179.0 -89.0 89.0 jgf1 2.0 True
 
 %%%%%%%%%%%% Parallel processing of CCP stack %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%% BETA VERSION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 # stack_CCP_par_beta.py
 # common_conversion_point_stack_par_beta.py
-• [OPTIONAL] Scripts as above but a beta version coded in Parallel.
+• [OPTIONAL] Scripts as above but a beta version coded in Parallel. Also specify num. cores.
 • Computes CCP-subvolume for each RF in each station (specify max cores) and sums to master volume.
 
 ---------------------------------------------------------------------------------
@@ -167,20 +167,20 @@ README last updated by: A. Boyce, 12/10/20
 • Description: Plots discontinuity depth pierce points
 • Inputs: discontinuity depth, converted phase
 • Outputs: matplotlib plot
-• Usage: python3 plot_map_pierce_points.py
+• Usage: python3 plot_map_pierce_points.py 410 P410s jgf1
 
 
 # CCP_plottingroutines.py
 • Description: Routines for various CCP stack plot types (discontinuity depth/sampling maps, cross sections, moveout)
 • Inputs: see below
-• Outputs: Varoius matplotlib plot windows.
+• Outputs: Various matplotlib plot windows.
 • Usage: see below
 
 # plot_CCP.py
 • Description: Wrapper for the function contained within CCP_plottingroutines.py
-• Inputs: Name, filter band, conversion, smoothing factor
+• Inputs: name, conversion, filter band, smoothing factor, mincoverage, plot_type, plot_params
 • Outputs: Various matplotlib plot windows.
-• Usage: python3 plot_CCP.py
+• Usage: python3 plot_CCP.py CCP_Global prem jgf1 2.0 2.0 COV 410
 
 ---------------------------------------------------------------------------------
 ----------------------  Travel_Times_Slowness  ----------------------------------
