@@ -1,6 +1,6 @@
 
-# turfpy
-toolbox utilizing receiver functions in python3
+# smurfpy
+seismic methods utilizing receiver functions in python3
 
 Contributors: Sanne Cottaar, Jennifer Jenkins, Stephen Pugh, Alistair Boyce, Matthew Kemp, Annemijn van Stiphout, Simon Thomas, Kieran Gilmore, and others
 
