@@ -2,7 +2,7 @@
 # turfpy
 toolbox utilizing receiver functions in python3
 
-Contributors: Sanne Cottaar, Jennifer Jenkins, Stephen Pugh, Alistair Boyce, Matthew Kemp, Annemijn van Stiphout, Kieran Gilmore, and others
+Contributors: Sanne Cottaar, Jennifer Jenkins, Stephen Pugh, Alistair Boyce, Matthew Kemp, Annemijn van Stiphout, Simon Thomas, Kieran Gilmore, and others
 
 
 README last updated by: A. Boyce, 27/10/20
