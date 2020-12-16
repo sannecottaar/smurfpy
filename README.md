@@ -32,6 +32,21 @@ For help with a script, use the command line argument 'help'. E.g. >> python3 1_
 
 Invalid use of a script will also return the help information
 
+-----------------------------------------------------------------------
+----------------------------- CITATION --------------------------------
+-----------------------------------------------------------------------
+
+If you use (part of) this code for your research, please cite our DOI on Zenodo. 
+
+Also consider citing one of these papers: 
+• Pugh, S., J. Jenkins, A. Boyce, and S. Cottaar (2021) Global receiver function observations of the X-discontinuity reveal recycled basalt beneath hotspots, Earth and Planetary Science Letters
+• Boyce, A.,  and S. Cottaar (2021) Insights into Deep Mantle Thermochemical Contributions to African Magmatism from Converted Seismic Phases, Geochemistry, Geophysics, Geosystems
+
+Earlier papers using SMURFPy are: 
+• Kemp., M., Jenkins, J., Maclennan, J. and Cottaar, S., 2019. X-discontinuity and transition zone structure beneath Hawaii suggests a heterogeneous plume. Earth and Planetary Science Letters, 527, p.115781.
+• Van Stiphout., A.M., Cottaar, S. and Deuss, A., 2019. Receiver function mapping of mantle transition zone discontinuities beneath Alaska using scaled 3-D velocity corrections. Geophysical Journal International, 219(2), pp.1432-1446.
+• Cottaar, S. and Deuss, A., 2016, Large-scale mantle discontinuity topography beneath Europe: signature of akimotoite in subducting slabs, Journal of Geophysical Research, 121, 279-292
+
 ---------------------------------------------------------------------------------
 --------------------------- Processing SCRIPTS ----------------------------------
 ---------------------------------------------------------------------------------
