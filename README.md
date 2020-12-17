@@ -36,7 +36,7 @@ Invalid use of a script will also return the help information
 ----------------------------- CITATION --------------------------------
 -----------------------------------------------------------------------
 
-If you use (part of) this code for your research, please cite our DOI on Zenodo. 
+If you use (part of) this code for your research, please cite: [![DOI](https://zenodo.org/badge/110966711.svg)](https://zenodo.org/badge/latestdoi/110966711) 
 
 Also consider citing one of these papers:   
 • Pugh, S., J. Jenkins, A. Boyce, and S. Cottaar (2021) Global receiver function observations of the X-discontinuity reveal recycled basalt beneath hotspots, Earth and Planetary Science Letters  
