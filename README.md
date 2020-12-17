@@ -5,7 +5,7 @@ seismological methods utilizing receiver functions in python3
 Contributors: Sanne Cottaar, Jennifer Jenkins, Stephen Pugh, Alistair Boyce, Matthew Kemp, Annemijn van Stiphout, Simon Thomas, Kieran Gilmore, and others
 
 
-README last updated by: A. Boyce, 27/10/20
+README last updated by: S. Cottaar, 16/12/20
 
 -----------------------------------------------------------------------
 --------------------------- OUTLINE -----------------------------------
@@ -262,9 +262,6 @@ shapely 1.6.4
 ---------------------------------------------------------------------------------
 
 Boyce, A. and Bastow, I. D. and Cottaar, S. and Kounoudis, R. and Guilloud De Courbeville, J. and Caunt, E. and Desai, S. (2020: Manuscript under review at Geochemistry, Geophysics, Geosystems) AFRP20: New P-wavespeed Model for the African Mantle Reveals Two Whole-Mantle Plumes Below East Africa and Neoproterozoic Modification of the Tanzania Craton  
-
-Cottaar, S., & Deuss, A.(2016).Large-scale mantle discontinuity topography beneath Europe: Signature of akimotoite in subducting slabs.J. Geophys. Res., 121(1), 279–292. doi:10.1002/2015jb012452  
-
 
 Lekic, V., French, S. W., & Fischer, K. M.    (2011).    Lithospheric Thinning Beneath Rifted Regions of Southern California. Science, 334 (6057), 783–787. doi:10.1126/science.1208898  
 
