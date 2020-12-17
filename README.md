@@ -2,7 +2,7 @@
 # smurfpy
 seismological methods utilizing receiver functions in python3
 
-Contributors: Sanne Cottaar, Jennifer Jenkins, Stephen Pugh, Alistair Boyce, Matthew Kemp, Annemijn van Stiphout, Simon Thomas, Kieran Gilmore, and others
+Contributors: Sanne Cottaar, Jennifer Jenkins, Stephen Pugh, Alistair Boyce, Matthew Kemp, Annemijn van Stiphout, Simon Thomas, Kieran Gilmore, Matt Harding, and others
 
 
 README last updated by: S. Cottaar, 16/12/20
