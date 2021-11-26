@@ -5,7 +5,7 @@ seismological methods utilizing receiver functions in python3
 Contributors: Sanne Cottaar, Jennifer Jenkins, Stephen Pugh, Alistair Boyce, Matthew Kemp, Annemijn van Stiphout, Simon Thomas, Kieran Gilmore, Matt Harding, and others
 
 
-README last updated by: S. Cottaar, 16/12/20
+README last updated by: S. Baker, 26/11/21
 
 -----------------------------------------------------------------------
 --------------------------- OUTLINE -----------------------------------
@@ -107,6 +107,12 @@ Earlier papers using SMURFPy are:
 • Outputs: On-screen plotting  
 • Usage: python3 8_plot_data_perstation.py jgf1  
 
+# 9_manual_removal.py
+• 'Description:          [OPTIONAL] Manual removal of RFs per station from the selected_RFs.dat list via epicentral distance.
+• Inputs:                Data directory (usually ../Data/), filter band
+• Outputs:               n/a \n
+• Usage:                 >> python3 8_plot_data_perstation.py datadirectory filterband
+
 
 ---------------------------------------------------------------------------------
 --------------------------- MIGRATION SCRIPTS -----------------------------------
@@ -190,7 +196,13 @@ Earlier papers using SMURFPy are:
 • Inputs: discontinuity depth, converted phase  
 • Outputs: matplotlib plot  
 • Usage: python3 plot_map_pierce_points.py 410 P410s jgf1  
-
+    
+# plot_map_stations_pierce_points.py  
+**NOT ADAPTED FOR USE WITH ORIGINAL SMURFPy, FOR USE WITH (SOPHIA'S VERSION)**
+• Description: Plots discontinuity depth pierce points and station locations on one plot
+• Inputs: discontinuity depth, converted phase  
+• Outputs: matplotlib plot
+• Usage: python3 plot_map_pierce_points.py 410 P410s jgf1  
 
 # CCP_plottingroutines.py  
 • Description: Routines for various CCP stack plot types (discontinuity depth/sampling maps, cross sections, moveout)  
@@ -200,6 +212,13 @@ Earlier papers using SMURFPy are:
 
 # plot_CCP.py  
 • Description: Wrapper for the function contained within CCP_plottingroutines.py  
+• Inputs: name, conversion, filter band, smoothing factor, mincoverage, plot_type, plot_params  
+• Outputs: Various matplotlib plot windows.  
+• Usage: python3 plot_CCP.py CCP_Global prem jgf1 2.0 2.0 COV 410  
+    
+# RFsPerStation.py  
+**NOT ADAPTED FOR USE WITH ORIGINAL SMURFPy, FOR USE WITH (SOPHIA'S VERSION)**
+• Description: Plots bar chart showing RFs per station (Selected and rejected)
 • Inputs: name, conversion, filter band, smoothing factor, mincoverage, plot_type, plot_params  
 • Outputs: Various matplotlib plot windows.  
 • Usage: python3 plot_CCP.py CCP_Global prem jgf1 2.0 2.0 COV 410  
