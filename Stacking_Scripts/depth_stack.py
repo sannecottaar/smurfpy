@@ -154,7 +154,7 @@ for s in range(len(stalist)):
             start_depth = seis[0].conversions[conversion]['depths'][0]
             stop_depth = 1200
             step = (stop_depth - start_depth) + 1
-            depth_space = np.linspace(start_depth,stop_depth,step)
+            depth_space = np.linspace(start_depth,stop_depth,int(step))
             STACK=np.zeros(len(depth_space))
 
         start_depth = seis[0].conversions[conversion]['depths'][0]
