@@ -83,7 +83,7 @@ phases_to_plot  = ['PP', 'P410s', 'P660s']
 # Define min/max epi dist and no. steps
 step = bin_size
 epi_steps = (60//step)+1
-epi_range = np.linspace(min_epi, max_epi, epi_steps)
+epi_range = np.linspace(min_epi, max_epi, int(epi_steps))
 
 # Set up stack ( matrix [len of RF x no of bins ])
 STACK = np.zeros([1751, epi_steps-1])
