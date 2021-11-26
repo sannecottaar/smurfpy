@@ -513,6 +513,7 @@ class ccp_volume(object):
 
 
         plt.figure(figsize=(14, 8))
+        plt.tight_layout()
 
         plt.subplot(2, 2, 2)
         m = Basemap(projection='merc', llcrnrlat=self.VOL['latmin'], urcrnrlat=self.VOL['latmax'], llcrnrlon=self.VOL['lonmin'], urcrnrlon=self.VOL['lonmax'], lat_ts=20, resolution='i')
@@ -560,6 +561,8 @@ class ccp_volume(object):
         plt.xlim(xends)
         plt.plot([min(xaxis), max(xaxis)], [410, 410], '--k', linewidth=0.2)
         plt.plot([min(xaxis), max(xaxis)], [660, 660], '--k', linewidth=0.2)
+        plt.ylabel('Depth (km)', fontsize=12)
+        plt.xlabel(xlabel, fontsize=12)
 
         plt.subplot(2, 1, 2)
 
@@ -622,6 +625,9 @@ class ccp_volume(object):
         # set volume lats and lons
         # window buffer at end of depth array to not pick.
         wb=5
+        
+        plt.figure(figsize=(14, 8))
+        plt.tight_layout()
 
         inv = geo.WGS84.Inverse(lat1, lon1, lat2, lon2)
         points = np.linspace(0, inv['s12'], numpoints)
@@ -709,11 +715,11 @@ class ccp_volume(object):
         else:
             plt.ylim([min(depths), max(depths)])
         plt.gca().invert_yaxis()
-        plt.xlim(xends)
+        plt.xlim([min(dist), max(dist)])
         plt.plot([min(xaxis), max(xaxis)], [410, 410], '--k', linewidth=0.2)
         plt.plot([min(xaxis), max(xaxis)], [660, 660], '--k', linewidth=0.2)
-
-
+        plt.ylabel('Depth (km)', fontsize=12)
+        plt.xlabel('Angular distance (dg)', fontsize=12)
 
         # corrected by 3D model
         # normalize
