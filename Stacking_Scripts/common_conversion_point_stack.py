@@ -103,9 +103,9 @@ class ccp_volume(object):
         outfilename='../CCP_volumes/'+name+'_'+filter+'_'+conversion+'_'+str(factor)+'/Stack_0.PICKLE'
 
         #setup volume grid
-        grid_depth=np.linspace(depmin,depmax,num=deprez)
-        grid_lon=np.linspace(lonmin,lonmax,num=lonrez)
-        grid_lat=np.linspace(latmin,latmax,num=latrez)
+        grid_depth=np.linspace(depmin,depmax,num=int(deprez))
+        grid_lon=np.linspace(lonmin,lonmax,num=int(lonrez))
+        grid_lat=np.linspace(latmin,latmax,num=int(latrez))
 
 
         # Read in STW105 for the velocities used in the fresnel zone width
