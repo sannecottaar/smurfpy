@@ -1,5 +1,6 @@
 import obspy
 from obspy.taup import TauPyModel
+from obspy.taup import taup_create
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate
