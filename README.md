@@ -198,7 +198,6 @@ Earlier papers using SMURFPy are:
 • Usage: python3 plot_map_pierce_points.py 410 P410s jgf1  
     
 # plot_map_stations_pierce_points.py  
-**NOT ADAPTED FOR USE WITH ORIGINAL SMURFPy, FOR USE WITH (SOPHIA'S VERSION)**
 • Description: Plots discontinuity depth pierce points and station locations on one plot
 • Inputs: discontinuity depth, converted phase  
 • Outputs: matplotlib plot
@@ -217,7 +216,6 @@ Earlier papers using SMURFPy are:
 • Usage: python3 plot_CCP.py CCP_Global prem jgf1 2.0 2.0 COV 410  
     
 # RFsPerStation.py  
-**NOT ADAPTED FOR USE WITH ORIGINAL SMURFPy, FOR USE WITH (SOPHIA'S VERSION)**
 • Description: Plots bar chart showing RFs per station (Selected and rejected)
 • Inputs: name, conversion, filter band, smoothing factor, mincoverage, plot_type, plot_params  
 • Outputs: Various matplotlib plot windows.  
