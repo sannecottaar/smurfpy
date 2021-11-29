@@ -98,9 +98,9 @@ class ccp_volume(object):
 # Plot data coverage map at predefined depth
 #
 
-    def plot_datacoverage(self,Data,depth,name='Megavolume',conversion='prem',filter='jgf1', factor=2.):
+    def plot_datacoverage(self,depth,name='Megavolume',conversion='prem',filter='jgf1', factor=2.):
 
-        coverage_file = open(Results+'/CCP_volumes/' + name + '_' + str(depth) + '_weights_' + conversion + '_' + str(filter) + '_' +str(int(factor))+'.txt', 'w')
+        coverage_file = open('.../CCP_volumes/' + name + '_' + str(depth) + '_weights_' + conversion + '_' + str(filter) + '_' +str(int(factor))+'.txt', 'w')
         fig = plt.figure(figsize=(6,6))
         d = np.argmin(np.abs(self.VOL['grid_depth']-depth))
         slice = self.VOL['volumeweight'][:,:, d].copy()
