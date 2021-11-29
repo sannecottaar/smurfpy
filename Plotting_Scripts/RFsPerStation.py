@@ -3,20 +3,20 @@ import numpy as np
 import glob
 import os
 
-Command line help
-    if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
-        print('\n')
-        print('-----------------------------------------------------------------------------------------------------------------------')
-        print(sys.argv[0])
-        print('-----------------------------------------------------------------------------------------------------------------------')
-        print('Description:           [OPTIONAL] Plot how many RFs are generated and selected per station as a bar chart.')
-        print('Inputs:                Data directory (usually ../Data/), filter band')
-        print('Outputs:               n/a\n')
-        print('Usage:                 >> python3 RFsPerStation.py datadirectory filterband')
-        print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
-        print('-----------------------------------------------------------------------------------------------------------------------')
-        print('\n')
-        sys.exit()
+#Command line help
+if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
+    print('\n')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print(sys.argv[0])
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('Description:           [OPTIONAL] Plot how many RFs are generated and selected per station as a bar chart.')
+    print('Inputs:                Data directory (usually ../Data/), filter band')
+    print('Outputs:               n/a\n')
+    print('Usage:                 >> python3 RFsPerStation.py datadirectory filterband')
+    print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+    print('-----------------------------------------------------------------------------------------------------------------------')
+    print('\n')
+    sys.exit()
 
 def rfsperstation(Data, filt):
     stations = glob.glob(Data + '/*')
