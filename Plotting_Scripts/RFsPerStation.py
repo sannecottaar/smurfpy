@@ -3,11 +3,22 @@ import numpy as np
 import glob
 import os
 
-# loop thru stations
-#   for a given station save its name and find length of rf .dat file
-# plot lengths
+Command line help
+    if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
+        print('\n')
+        print('-----------------------------------------------------------------------------------------------------------------------')
+        print(sys.argv[0])
+        print('-----------------------------------------------------------------------------------------------------------------------')
+        print('Description:           [OPTIONAL] Plot how many RFs are generated and selected per station as a bar chart.')
+        print('Inputs:                Data directory (usually ../Data/), filter band')
+        print('Outputs:               n/a\n')
+        print('Usage:                 >> python3 RFsPerStation.py datadirectory filterband')
+        print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+        print('-----------------------------------------------------------------------------------------------------------------------')
+        print('\n')
+        sys.exit()
 
-def rfsperstation(Data, noisefilter, filt):
+def rfsperstation(Data, filt):
     stations = glob.glob(Data + '/*')
     stalist = []
     rfcount =[]
@@ -17,7 +28,7 @@ def rfsperstation(Data, noisefilter, filt):
         sta = station.replace(Data+'/MY.','')
         stalist.append(sta)
 
-        file = station + '/selected_RFs_'+noisefilter+filt+'.dat'
+        file = station + '/selected_RFs_'+filt+'.dat'
         
         
         if os.path.isfile(file):
@@ -39,5 +50,9 @@ def rfsperstation(Data, noisefilter, filt):
 
     plt.legend(frameon=False)
 
-    plt.savefig('selected_RFs_'+noisefilter+filt+'_per_station.png')
-    plt.savefig('selected_RFs_'+noisefilter+filt+'_per_station.pdf')
+    plt.savefig('selected_RFs_'+filt+'_per_station.png')
+    plt.savefig('selected_RFs_'+filt+'_per_station.pdf')
+    
+Data = sys.argv[1]
+filt = sys.argv[2]
+rfsperstation(Data, filt)
