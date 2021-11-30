@@ -109,6 +109,7 @@ class ccp_volume(object):
         xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
 
         m = plt.axes(projection=ccrs.Mercator())
+        m.set_extent([self.VOL['lonmin'], self.VOL['lonmax'], self.VOL['latmin'], self.VOL['latmax']], crs=ccrs.PlateCarree())
 
         m.add_feature(cfeature.COASTLINE)
         m.add_feature(cfeature.BORDERS, linestyle="--")
@@ -201,8 +202,8 @@ class ccp_volume(object):
 
         # Prepare map
         m = plt.axes(projection=ccrs.Mercator())
+        m.set_extent([self.VOL['lonmin'], self.VOL['lonmax'], self.VOL['latmin'], self.VOL['latmax']], crs=ccrs.PlateCarree())
 
-        
         xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
         x, y = xx, yy
 
@@ -312,7 +313,7 @@ class ccp_volume(object):
 
         # Prepare map
         m = plt.axes(projection=ccrs.Mercator())
-
+        m.set_extent([self.VOL['lonmin'], self.VOL['lonmax'], self.VOL['latmin'], self.VOL['latmax']], crs=ccrs.PlateCarree())
 
         xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
         x, y = xx, yy
@@ -513,16 +514,15 @@ class ccp_volume(object):
             m.plot([x1, x2], [y1, y2], color='r', linewidth=1, zorder=1,transform=ccrs.PlateCarree())
             x3, y3 = lon*np.ones(len(xaxis),), np.round(xaxis/10.)*10.
             m.scatter(x3, y3, 80, xaxis, zorder=2,transform=ccrs.PlateCarree())
-            # set extent as desired
-            m.set_extent([x1-4, x2+4, y1-2, y2+2], crs=ccrs.PlateCarree())
         if direction == 'EW':
             x1, y1 = xends[0], yends[0]
             x2, y2 = xends[1], yends[1]
             m.plot([x1, x2], [y1, y2], color='r', linewidth=1, zorder=1,transform=ccrs.PlateCarree())
             x3, y3 = np.round(xaxis/10.)*10, lat*np.ones(len(xaxis),)
             m.scatter(x3, y3, 80, xaxis, zorder=2,transform=ccrs.PlateCarree())
-            # set extent as desired
-            m.set_extent([x1-2, x2+2, y1-4, y2+4], crs=ccrs.PlateCarree())
+
+        m.set_extent([self.VOL['lonmin'], self.VOL['lonmax'], self.VOL['latmin'], self.VOL['latmax']], crs=ccrs.PlateCarree())
+
 
         norm = 0.2/amplify
         
@@ -692,8 +692,7 @@ class ccp_volume(object):
         x1, y1 = xends[0], yends[0]
         x2, y2 = xends[1], yends[1]
         m.plot([x1, x2], [y1, y2], color='r', linewidth=1, zorder=1,transform=ccrs.PlateCarree())
-        # set extent as desired
-        m.set_extent([x1-4, x2+4, y1-4, y2+4], crs=ccrs.PlateCarree())
+        m.set_extent([self.VOL['lonmin'], self.VOL['lonmax'], self.VOL['latmin'], self.VOL['latmax']], crs=ccrs.PlateCarree())
 
         m.add_feature(cfeature.COASTLINE)
         m.add_feature(cfeature.BORDERS, linestyle="--")
