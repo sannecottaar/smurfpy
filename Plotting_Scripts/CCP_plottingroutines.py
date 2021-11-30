@@ -23,6 +23,8 @@ import matplotlib.pyplot as plt
 knotspacing = lambda r, vs: 1./2.*np.sqrt(((10./3.*vs)+r)**2.-r**2.) # in m for a 10s wave
 
 
+# toggle gridlines via replacement of gl.xlines = False and gl.ylines = False with gl.xlines = True and gl.ylines = True 
+
 def haversine(lat1, long1, lats2, longs2):
     """
     Calculate the distance between two points on earth in m
