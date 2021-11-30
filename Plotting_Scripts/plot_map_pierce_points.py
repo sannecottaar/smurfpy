@@ -61,10 +61,9 @@ lonmin = np.min(lonpp) - 2
 lonmax = np.max(lonpp) + 2
 latmin = np.min(latpp) - 2
 latmax = np.max(latpp) + 2
-lon_0 = np.mean(lonmin,lonmax)
-lat_0 = np.mean(latmin,latmax)
+lon_0 = (lonmin+lonmax)/2
+lat_0 = (latmin+latmax)/2
 
-# lon_0, lat_0 are the central longitude and latitude of the projection.
 m = plt.axes(projection=ccrs.Mercator())
 
 m.add_feature(cfeature.COASTLINE)
@@ -76,12 +75,12 @@ gl = m.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,linewidth=2, color='gr
 gl.xlines = False
 gl.ylines = False
 # adjust tick locations to requirements
-gl.xlocator = mticker.FixedLocator([lonmin,lon_0,lonmax])
-gl.ylocator = mticker.FixedLocator([latmin,lat_0,latmax])
+gl.xlocator = mticker.FixedLocator([lonmin,(lonmin+lonmax)/2,lonmax])
+gl.ylocator = mticker.FixedLocator([latmin,(latmin+latmax)/2,latmax])
 
 # plot pierce points
 print(lonpp, latpp)
-x1, y1 = lonpp, latpp)
+x1, y1 = lonpp, latpp
 m.scatter(x1, y1, s=30, marker='o', color='k', alpha=.3, transform=ccrs.PlateCarree())
 
 plt.title('Pierce points for ' + phase + ' at ' + depth + ' km depth')
