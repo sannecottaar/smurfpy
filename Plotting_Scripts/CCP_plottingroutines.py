@@ -504,18 +504,8 @@ class ccp_volume(object):
         plt.figure(figsize=(14, 8))
         plt.tight_layout()
 
-        plt.subplot(2, 2, 2)
+        m = plt.subplot(2, 2, 2, projection=ccrs.Mercator())
     
-        m = plt.axes(projection=ccrs.Mercator())
-
-        m.add_feature(cfeature.COASTLINE)
-        m.add_feature(cfeature.BORDERS, linestyle="--")
-
-        gl = m.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,linewidth=2, color='gray', alpha=0.5, linestyle='--')
-        gl.xlines = False
-        gl.ylines = False
-        gl.xlocator = mticker.FixedLocator([110,115,120])
-        gl.ylocator = mticker.FixedLocator([0,5,10])
 
         if direction == 'NS':
             x1, y1 = yends[0], xends[0]
@@ -523,16 +513,21 @@ class ccp_volume(object):
             m.plot([x1, x2], [y1, y2], color='r', linewidth=1, zorder=1,transform=ccrs.PlateCarree())
             x3, y3 = lon*np.ones(len(xaxis),), np.round(xaxis/10.)*10.
             m.scatter(x3, y3, 80, xaxis, zorder=2,transform=ccrs.PlateCarree())
+            # set extent as desired
+            m.set_extent([x1-4, x2+4, y1-2, y2+2], crs=ccrs.PlateCarree())
         if direction == 'EW':
             x1, y1 = xends[0], yends[0]
             x2, y2 = xends[1], yends[1]
             m.plot([x1, x2], [y1, y2], color='r', linewidth=1, zorder=1,transform=ccrs.PlateCarree())
             x3, y3 = np.round(xaxis/10.)*10, lat*np.ones(len(xaxis),)
             m.scatter(x3, y3, 80, xaxis, zorder=2,transform=ccrs.PlateCarree())
+            # set extent as desired
+            m.set_extent([x1-2, x2+2, y1-4, y2+4], crs=ccrs.PlateCarree())
 
         norm = 0.2/amplify
+        
 
-        # plot
+
         m.add_feature(cfeature.COASTLINE)
         m.add_feature(cfeature.BORDERS, linestyle="--")
 
@@ -692,13 +687,13 @@ class ccp_volume(object):
                     crossec[i, j] = 1000.
 
         # Map
-        plt.subplot(2, 2, 2)
-        
-        m = plt.axes(projection=ccrs.Mercator())
+        m = plt.subplot(2, 2, 2, projection=ccrs.Mercator())
 
         x1, y1 = xends[0], yends[0]
         x2, y2 = xends[1], yends[1]
         m.plot([x1, x2], [y1, y2], color='r', linewidth=1, zorder=1,transform=ccrs.PlateCarree())
+        # set extent as desired
+        m.set_extent([x1-4, x2+4, y1-4, y2+4], crs=ccrs.PlateCarree())
 
         m.add_feature(cfeature.COASTLINE)
         m.add_feature(cfeature.BORDERS, linestyle="--")
@@ -708,7 +703,6 @@ class ccp_volume(object):
         gl.ylines = False
         gl.xlocator = mticker.FixedLocator([110,115,120])
         gl.ylocator = mticker.FixedLocator([0,5,10])
-
 
         # Stack 1: colourmap
         plt.subplot(2, 2, 1)
