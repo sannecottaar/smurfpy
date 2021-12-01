@@ -3,36 +3,33 @@
 ############################
 
 #----------------------------------------#
-import sys
-import mpl_toolkits
-import mpl_toolkits.basemap
-from mpl_toolkits.basemap import Basemap
 import numpy as np
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
 import scipy
-from scipy import interpolate
 import matplotlib.pyplot as plt
-import subprocess
-import glob, sys
+import sys
 import pandas as pd
 #----------------------------------------#
 
 # Command line help
-if len(sys.argv) != 4 or str(sys.argv[1]).lower() == 'help':
-    print('\n')
-    print('-----------------------------------------------------------------------------------------------------------------------')
-    print(sys.argv[0])
-    print('-----------------------------------------------------------------------------------------------------------------------')
-    print('Description:           Plots discontinuity depth pierce points for 410, 660 and station locations on map.')
-    print('Inputs:                path to data, filter band')
-    print('Outputs:               matplotlib plot)\n')
-    print('Usage:                 >> python3 plot_map_stations_pierce_points.py pathtodata rffilter')
-    print('Format                 1-3: [str]')
-    print('Recommended:           >> python3 plot_map_stations_pierce_points.py 410 P410s jgf1')
-    print('-----------------------------------------------------------------------------------------------------------------------')
-    print('\n')
-    sys.exit()
+# if len(sys.argv) != 4 or str(sys.argv[1]).lower() == 'help':
+#     print('\n')
+#     print('-----------------------------------------------------------------------------------------------------------------------')
+#     print(sys.argv[0])
+#     print('-----------------------------------------------------------------------------------------------------------------------')
+#     print('Description:           Plots discontinuity depth pierce points')
+#     print('Inputs:                discontinuity depth, converted phase, filter band')
+#     print('Outputs:               matplotlib plot)\n')
+#     print('Usage:                 >> python3 plot_map_pierce_points.py depth phase rffilter')
+#     print('Format                 1-3: [str]')
+#     print('Recommended:           >> python3 plot_map_pierce_points.py 410 P410s jgf1')
+#     print('-----------------------------------------------------------------------------------------------------------------------')
+#     print('\n')
+#     sys.exit()
 
-def plot_pierce_points(Data, filt):
+def plot_pierce_points(Data, noise, filt):
 # Initial options
     rffilter = str(filt)  # RF filter
     Results = Data+'_Results'
@@ -42,8 +39,8 @@ def plot_pierce_points(Data, filt):
     shapes = ['o','s']
     plt.figure(figsize=(6, 8))
 
-    piercelist410 = [Results+'/PP_410km_P410s_'+rffilter+'.txt']
-    piercelist660 = [Results+'/PP_660km_P660s_'+rffilter+'.txt']
+    piercelist410 = [Results+'/PP_410km_P410s_'+noise+rffilter+'.txt']
+    piercelist660 = [Results+'/PP_660km_P660s_'+noise+rffilter+'.txt']
 
     # Read in pierce points
     lonpp410 = []
@@ -82,27 +79,26 @@ def plot_pierce_points(Data, filt):
     lonmax = np.max(lonpp) + 2
     latmin = np.min(latpp) - 2
     latmax = np.max(latpp) + 2
+    
+    m = plt.axes(projection=ccrs.Mercator())
+    m.set_extent([lonmin,lonmax,latmin,latmax], crs=ccrs.PlateCarree())
 
-        # llcrnrlat,llcrnrlon,urcrnrlat,urcrnrlon
-        # are the lat/lon values of the lower left and upper right corners
-        # of the map.
-        # resolution = 'i' means use intermediate resolution coastlines.
-        # lon_0, lat_0 are the central longitude and latitude of the projection.
-    m = Basemap(
-        llcrnrlon=lonmin, llcrnrlat=latmin, urcrnrlon=lonmax, urcrnrlat=latmax,
-                resolution='i', projection='merc', lon_0=np.mean((lonmin, lonmax)), lat_0=np.mean((latmin, latmax)))
-    m.drawcoastlines()
-    m.drawcountries()
+    m.add_feature(cfeature.COASTLINE)
+    m.add_feature(cfeature.LAND, color="lightgrey", alpha=0.5)
+    m.add_feature(cfeature.BORDERS, linestyle="--")
+    m.add_feature(cfeature.OCEAN, color="skyblue", alpha=0.4)
 
-    # draw parallels and meridians.
-    m.drawparallels(np.arange(-40, 80., 5.), color='gray')
-    m.drawmeridians(np.arange(-30., 80., 5.), color='gray')
+    gl = m.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,linewidth=2, color='gray', alpha=0.5, linestyle='--')
+    gl.xlines = False
+    gl.ylines = False
+    gl.xlocator = mticker.FixedLocator([110,115,120])
+    gl.ylocator = mticker.FixedLocator([0,5,10])
 
     # plot pierce points
-    x410, y410 = m(lonpp410, latpp410)
-    m.scatter(x410, y410, s=30, marker=shapes[0], color=colours[0], alpha=.3, label='P410s')
-    x660, y660 = m(lonpp660, latpp660)
-    m.scatter(x660, y660, s=30, marker=shapes[1], color=colours[1], alpha=.3, label='P660s')
+    x410, y410 = lonpp410, latpp410
+    m.scatter(x410, y410, s=30, marker=shapes[0], color=colours[0], alpha=.3, label='P410s',transform=ccrs.PlateCarree())
+    x660, y660 = lonpp660, latpp660
+    m.scatter(x660, y660, s=30, marker=shapes[1], color=colours[1], alpha=.3, label='P660s',transform=ccrs.PlateCarree())
 
 
     data = pd.read_csv('/path/to/station/info', sep=" ")
