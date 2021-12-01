@@ -65,6 +65,7 @@ lon_0 = (lonmin+lonmax)/2
 lat_0 = (latmin+latmax)/2
 
 m = plt.axes(projection=ccrs.Mercator())
+m.set_extent([lonmin,lonmax,latmin,latmax], crs=ccrs.PlateCarree())
 
 m.add_feature(cfeature.COASTLINE)
 m.add_feature(cfeature.LAND, color="lightgrey", alpha=0.5)
