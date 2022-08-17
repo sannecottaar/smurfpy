@@ -110,7 +110,7 @@ class ccp_volume(object):
 
         xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
 
-        m = plt.axes(projection=ccrs.Mercator())
+        m = plt.axes(projection=ccrs.PlateCarree())
         m.set_extent([self.VOL['lonmin'], self.VOL['lonmax'], self.VOL['latmin'], self.VOL['latmax']], crs=ccrs.PlateCarree())
 
         m.add_feature(cfeature.COASTLINE)
@@ -203,7 +203,7 @@ class ccp_volume(object):
 
 
         # Prepare map
-        m = plt.axes(projection=ccrs.Mercator())
+        m = plt.axes(projection=ccrs.PlateCarree())
         m.set_extent([self.VOL['lonmin'], self.VOL['lonmax'], self.VOL['latmin'], self.VOL['latmax']], crs=ccrs.PlateCarree())
 
         xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
@@ -314,7 +314,7 @@ class ccp_volume(object):
         print(var_str)
 
         # Prepare map
-        m = plt.axes(projection=ccrs.Mercator())
+        m = plt.axes(projection=ccrs.PlateCarree())
         m.set_extent([self.VOL['lonmin'], self.VOL['lonmax'], self.VOL['latmin'], self.VOL['latmax']], crs=ccrs.PlateCarree())
 
         xx, yy = np.meshgrid(self.VOL['grid_lon'], self.VOL['grid_lat'])
@@ -507,7 +507,7 @@ class ccp_volume(object):
         plt.figure(figsize=(14, 8))
         plt.tight_layout()
 
-        m = plt.subplot(2, 2, 2, projection=ccrs.Mercator())
+        m = plt.subplot(2, 2, 2, projection=ccrs.PlateCarree())
     
 
         if direction == 'NS':
@@ -689,7 +689,7 @@ class ccp_volume(object):
                     crossec[i, j] = 1000.
 
         # Map
-        m = plt.subplot(2, 2, 2, projection=ccrs.Mercator())
+        m = plt.subplot(2, 2, 2, projection=ccrs.PlateCarree())
 
         x1, y1 = xends[0], yends[0]
         x2, y2 = xends[1], yends[1]
