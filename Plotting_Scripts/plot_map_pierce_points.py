@@ -76,8 +76,8 @@ gl = m.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,linewidth=2, color='gr
 gl.xlines = False
 gl.ylines = False
 # adjust tick locations to requirements
-gl.xlocator = mticker.FixedLocator([lonmin,(lonmin+lonmax)/2,lonmax])
-gl.ylocator = mticker.FixedLocator([latmin,(latmin+latmax)/2,latmax])
+gl.xlocator = mticker.FixedLocator([lonmin,lon0,lonmax])
+gl.ylocator = mticker.FixedLocator([latmin,lat0,latmax])
 
 # plot pierce points
 print(lonpp, latpp)
