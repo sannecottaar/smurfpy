@@ -35,7 +35,6 @@ if len(sys.argv) != 4 or str(sys.argv[1]).lower() == 'help':
     print('\n')
     sys.exit()
     
-sys.path.insert(0, 'Path/to/smurfpy/Tools/TauP-2.5.0/bin')
 
 PREM=True
 ak135=False
