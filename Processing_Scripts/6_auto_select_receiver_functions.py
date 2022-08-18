@@ -32,12 +32,14 @@ if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
     print('                           2. Peak amplitude max threshold before main P-wave arrival (noisebefore)')
     print('                           3. Peak amplitude max threshold after main P-wave arrival (noiseafter)')
     print('                           4. Peak amplitude min threshold after main P-wave arrival (minamp)')
-    print('Inputs:                Data directory (usually ../Data/), horizontal component (usually radial), filter band,')
-    print('                       SNR calculation type, fitmin, noisebefore, noiseafter, minamp')
+    print('Inputs:                Data directory (usually ../Data/), horizontal component (usually radial), filter band, minimum/')
+    print('                       maximum epicentral distances, SNR calculation type, fitmin, noisebefore, noiseafter, minamp')
     print('Outputs:               Two ".dat" files specific to the chosen filter band recording the good RF files and the good')
     print('                       RF file SNR ratios (V & R components)\n')
-    print('Usage:                 >> python3 6_auto_select_receiver_functions.py filterband')
+    print('Usage:                 >> python3 6_auto_select_receiver_functions.py filterband mindistance maxdistance')
     print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+    print('Options [2,3]:         epicentral distance [int])
+    print('Recommended:           python3 6_auto_select_receiver_functions.py jgf1 30 90')
     print('-----------------------------------------------------------------------------------------------------------------------')
     print('\n')
     sys.exit()
@@ -49,6 +51,8 @@ file_char_len = -42
 direc = '../Data'
 flag = 'SV'
 filt = str(sys.argv[1])
+mindist = int(sys.argv[2])
+maxdist = int(sys.argv[3])
 count = 0
 
 # set noise criteria
@@ -95,7 +99,7 @@ for stadir in stadirs:
         if os.path.isfile(stalist[i]):
             seis = read(stalist[i], format='PICKLE')
             dist = seis[0].stats['dist']
-            if dist > 30 and dist < 90:  # Check distance range
+            if dist > mindist and dist < maxdist:  # Check distance range
                 RF = trace.Trace()
   
                 findRF = getattr(seis[0], filt)
@@ -261,7 +265,7 @@ for stadir in stadirs:
                     print("P arrival-time: " + str(indm) + '\n')
                     P_time +=1
             else:
-                print("Station: " + stadir + ", Event: " + stalist[i] + ", Not between 30-90deg " + '\n')
+                print("Station: " + stadir + ", Event: " + stalist[i] + ", Not between " + str(mindist) + "-" + str(maxdist) + "deg " + '\n')
                 print("Dist: " + str(dist) + '\n')
                 Epi_dist +=1                    
     goodrffile.close()
