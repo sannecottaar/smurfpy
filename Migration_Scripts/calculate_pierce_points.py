@@ -1,5 +1,5 @@
 '''
-Piercepoints_Calc.py
+calculate_pierce_points.py
 This script computes predicted pierce points for user defined phases based on TauP.
 It loops through all the data, checking whether the pierce points have been calculated,
 and if not working them out, writing the data to sperate file and the PICKLE file itself.
@@ -11,7 +11,7 @@ sys.argv[1] = Depth of piercepoints
 sys.argv[2] = Phase
 sys.argv[3] = Filter
 
-eg. Piercepoints_Calc.py 410 P410s jgf1
+eg. calculate_pierce_points.py 410 P410s jgf1
 '''
 
 # Import all the relevant modules
@@ -55,8 +55,8 @@ taupmodel = TauPyModel(model=mod)
 PP = open('PP_' + str(sys.argv[1]) + 'km_' + str(sys.argv[2]) + '_' + str(sys.argv[3]) + '_test.txt', 'w')
 
 # Loop through stations
-direc = '../RF_Data'
-stadirs = glob.glob(direc + '/IU*')
+direc = '../Data'
+stadirs = glob.glob(direc + '/*')
 for stadir in stadirs:
     stalist = []
     if os.path.isfile(stadir + '/selected_RFs_'+str(sys.argv[3])+'.dat'):
