@@ -254,15 +254,15 @@ For a comparison of your current python modules to a checked working verison see
 
 --- Checked system package versions ---  
 
-python 3.6.9 (default, Oct  8 2020, 12:12:24)  
-[GCC 8.4.0]  
+python 3.8.8 (default, Apr 13 2021, 12:59:45)
+Clang 10.0.0
 
-geographiclib 1.49  
-matplotlib 3.0.3  
-numpy 1.16.3  
-obspy 1.1.1  
-scipy 1.2.1  
-shapely 1.6.4
+geographiclib 1.52
+matplotlib 3.3.4
+numpy 1.20.1
+obspy 1.2.2
+scipy 1.6.2
+shapely 1.7.1
 
 ---------------------------------------------------------------------------------
 ---------------------------------- References -----------------------------------
