@@ -242,7 +242,7 @@ plt.plot(arr3[2][1], arr3[2][2], marker="^", color='purple', markersize=12, mark
 #-----------------Plot the stack----------------------------
 
 #Plotting using contourf (time_axis (RF time), slowness_range, slowness_matrix, contour_levels , colourmap , extend (extend grid if data lies outside range))
-contour_levels = np.linspace(-.05,.0501,20)
+contour_levels = np.linspace(-.05,.0501,int(20))
 cs = plt.contourf(time,slow,STACK2,contour_levels, cmap=plt.cm.seismic, extend="both")
 cbar = plt.colorbar(format="%0.2f")
 

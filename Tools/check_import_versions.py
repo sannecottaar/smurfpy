@@ -5,6 +5,7 @@
 
 
 import geographiclib
+import cartopy
 import cmath
 import concurrent.futures
 import glob
@@ -25,12 +26,14 @@ import sys
 import time
 import warnings
 
+
 print()
 print('--- Current system package versions ---')
 print()
 print('python',sys.version)
 print()
 print('geographiclib',geographiclib.__version__)
+print('cartopy',cartopy.__version__)
 print('matplotlib',matplotlib.__version__)
 print('numpy',numpy.__version__)
 print('obspy',obspy.__version__)
@@ -66,15 +69,16 @@ print()
 print()
 print('--- Checked system package versions ---')
 print()
-print('python 3.6.9 (default, Oct  8 2020, 12:12:24)')
-print('[GCC 8.4.0]')
-print()
-print('geographiclib 1.49')
-print('matplotlib 3.0.3')
-print('numpy 1.16.3')
-print('obspy 1.1.1')
-print('scipy 1.2.1')
-print('shapely 1.6.4.post2')
+
+print('python 3.8.8 (default, Apr 13 2021, 12:59:45)')
+print('[Clang 10.0.0 ]')
+
+print('geographiclib 1.52')
+print('matplotlib 3.3.4')
+print('numpy 1.20.1')
+print('obspy 1.2.2')
+print('scipy 1.6.2')
+print('shapely 1.7.1')
 
 print()
 print('---------------------------------------')

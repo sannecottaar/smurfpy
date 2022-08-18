@@ -5,8 +5,9 @@
 #----------------------------------------#
 import sys
 import mpl_toolkits
-import mpl_toolkits.basemap
-from mpl_toolkits.basemap import Basemap
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.ticker as mticker
 import numpy as np
 import scipy
 from scipy import interpolate
@@ -60,26 +61,28 @@ lonmin = np.min(lonpp) - 2
 lonmax = np.max(lonpp) + 2
 latmin = np.min(latpp) - 2
 latmax = np.max(latpp) + 2
+lon_0 = (lonmin+lonmax)/2
+lat_0 = (latmin+latmax)/2
 
-# llcrnrlat,llcrnrlon,urcrnrlat,urcrnrlon
-# are the lat/lon values of the lower left and upper right corners
-# of the map.
-# resolution = 'i' means use intermediate resolution coastlines.
-# lon_0, lat_0 are the central longitude and latitude of the projection.
-m = Basemap(
-    llcrnrlon=lonmin, llcrnrlat=latmin, urcrnrlon=lonmax, urcrnrlat=latmax,
-            resolution='i', projection='merc', lon_0=np.mean((lonmin, lonmax)), lat_0=np.mean((latmin, latmax)))
-m.drawcoastlines()
-m.drawcountries()
+m = plt.axes(projection=ccrs.PlateCarree())
+m.set_extent([lonmin,lonmax,latmin,latmax], crs=ccrs.PlateCarree())
 
-# draw parallels and meridians.
-m.drawparallels(np.arange(-40, 80., 5.), color='gray')
-m.drawmeridians(np.arange(-30., 80., 5.), color='gray')
+m.add_feature(cfeature.COASTLINE)
+m.add_feature(cfeature.LAND, color="lightgrey", alpha=0.5)
+m.add_feature(cfeature.BORDERS, linestyle="--")
+m.add_feature(cfeature.OCEAN, color="skyblue", alpha=0.4)
+
+gl = m.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,linewidth=2, color='gray', alpha=0.5, linestyle='--')
+gl.xlines = False
+gl.ylines = False
+# adjust tick locations to requirements
+gl.xlocator = mticker.FixedLocator([lonmin,lon0,lonmax])
+gl.ylocator = mticker.FixedLocator([latmin,lat0,latmax])
 
 # plot pierce points
 print(lonpp, latpp)
-x1, y1 = m(lonpp, latpp)
-m.scatter(x1, y1, s=30, marker='o', color='k', alpha=.3)
+x1, y1 = lonpp, latpp
+m.scatter(x1, y1, s=30, marker='o', color='k', alpha=.3, transform=ccrs.PlateCarree())
 
 plt.title('Pierce points for ' + phase + ' at ' + depth + ' km depth')
 plt.show()
