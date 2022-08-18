@@ -42,9 +42,9 @@ if len(sys.argv) != 4 or str(sys.argv[1]).lower() == 'help':
 PREM=True
 ak135=False
 if PREM:
-    mod='prem_added_discon_taup.npz'
+    mod='../Tools/MODELS/PREM_FILES/prem_added_discon_taup.npz'
 elif ak135:
-    mod='ak135_added_discon_taup.npz'
+    mod='../Tools/MODELS/PREM_FILES/ak135_added_discon_taup.npz'
     
 # Allows for more depths than normal PREM
 # Discrepancy only appears in 4th decimal of lat/lon for P400s
