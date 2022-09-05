@@ -1,20 +1,23 @@
 '''
-Piercepoints_Calc.py
+calculate_pierce_points.py
 This script computes predicted pierce points for user defined phases based on TauP.
 It loops through all the data, checking whether the pierce points have been calculated,
 and if not working them out, writing the data to sperate file and the PICKLE file itself.
+
+Phases can be computed for every discontinuity depth and evaluated at every discontinuity
+depth in prem_added_discon_taup.npz or ak135_added_discon_taup.npz.
 
 sys.argv[1] = Depth of piercepoints
 sys.argv[2] = Phase
 sys.argv[3] = Filter
 
-eg. Piercepoints_Calc.py 410 P410s jgf1
+eg. calculate_pierce_points.py 410 P410s jgf1
 '''
 
 # Import all the relevant modules
 from obspy import read
 import os, sys, glob
-import subprocess
+from obspy.taup import TauPyModel
 
 # Command line help
 if len(sys.argv) != 4 or str(sys.argv[1]).lower() == 'help':
@@ -39,15 +42,17 @@ if len(sys.argv) != 4 or str(sys.argv[1]).lower() == 'help':
 PREM=True
 ak135=False
 if PREM:
-    mod='prem'
+    mod='../Tools/MODELS/PREM_FILES/prem_added_discon_taup.npz'
 elif ak135:
-    mod='ak135'
-
-
+    mod='../Tools/MODELS/PREM_FILES/ak135_added_discon_taup.npz'
+    
+# Allows for more depths than normal PREM
+# Discrepancy only appears in 4th decimal of lat/lon for P400s
+taupmodel = TauPyModel(model=mod)
 
 # Make and open a data file in the Piercepoints directory for this phase
 # and depth ('w' = writable)
-PP = open('PP_' + str(sys.argv[1]) + 'km_' + str(sys.argv[2]) + '_' + str(sys.argv[3]) + '.txt', 'w')
+PP = open('PP_' + str(sys.argv[1]) + 'km_' + str(sys.argv[2]) + '_' + str(sys.argv[3]) + '_test.txt', 'w')
 
 # Loop through stations
 direc = '../Data'
@@ -95,35 +100,12 @@ for stadir in stadirs:
         if runthis:
             print('runthis is True')
             # Call taup_pierce to get piercepoints
-            test = [
-                'taup_pierce -mod ' + str(mod) + ' -h ' + str(
-                    EVDP) + ' -ph ' + sys.argv[
-                        2] + ' -pierce ' + sys.argv[
-                            1] + ' -nodiscon -sta ' + str(
-                    STLA) + ' ' + str(
-                        STLO) + ' -evt ' + str(
-                            EVLA) + ' ' + str(
-                                EVLO)]
+            arrivals = taupmodel.get_pierce_points_geo(EVDP,EVLA,EVLO,STLA,STLO,phase_list=([sys.argv[2]]))
 
-            # Run test in terminal
-            out = subprocess.check_output(
-                test,
-                shell=True,
-                universal_newlines=True)
-
-            # Split the output into lines
-            # t[0] is a description
-            # t[1] the downwards pierce and t[2] the upwards pierce (if event depth < PP depth)
-            # t[1] the upwards pierce (if event depth > PP depth)
-            t = out.split('\n')
-
-            # Split the relevant line into strings
-            if EVDP <= float(sys.argv[1]):
-                u = t[2].split()
-            else:
-                u = t[1].split()
-
-            # For the string U: PP depth = u[1], lat = u[3], lon = u[4]
+            # Index from source side to find nearest pierce depth
+            pierce_list = arrivals[0].pierce[::-1]
+            # Find nearest depth
+            index = min(range(len(pierce_list)), key=lambda i: abs(float(pierce_list[i][3])-float(sys.argv[1])))
 
             # Make a separate dictionary within piercepoints for each phase
             seis[0].stats.piercepoints[sys.argv[2]] = dict()
@@ -131,13 +113,14 @@ for stadir in stadirs:
             # For each phase, create a dictionary for each depth, writing
             # piercepoint depth/lat/lon info
             seis[0].stats.piercepoints[sys.argv[2]][
-                sys.argv[1]] = [u[1], u[3], u[4]]
+                sys.argv[1]] = [pierce_list[index][3],pierce_list[index][4],pierce_list[index][5]]
 
             # Write pierce point data to original pickle file
             seis.write(stalist[s], format='PICKLE')
 
             # Add line to opened output file followed by new line
-            PP.write(str(float(u[1])) + ' ' + str(float(u[3])) + ' ' + str(float(u[4])) + '\n')
+            PP.write(str(float(pierce_list[index][3])) + ' ' + str(round(pierce_list[index][4],2)) + ' '
+                     + str(round(pierce_list[index][5],2)) + '\n')
 
         else:
             PP.write(seis[0].stats.piercepoints[sys.argv[2]][sys.argv[1]][0] + ' ' + \

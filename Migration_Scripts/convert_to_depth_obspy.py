@@ -1,5 +1,5 @@
 ############## Convert RF from time to depth using 1D model ##############
-# Converts RF from time to depth using obspy and taup
+# Converts RF from time to depth using obspy.taup
 # 1D model defined in 'taupmodel' below imports
 # Change station directory at base of script to point to your station dir
 # Outputs dictionary seis[0].conversions['<nameof1Dmodel>']
@@ -11,33 +11,31 @@ from obspy.core import trace
 import os.path
 import glob
 import numpy as np
-import subprocess
 from obspy.taup import TauPyModel
 
 # Command line help
-if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
+if len(sys.argv) != 3 or str(sys.argv[1]).lower() == 'help':
     print('\n')
     print('-----------------------------------------------------------------------------------------------------------------------')
     print(sys.argv[0])
     print('-----------------------------------------------------------------------------------------------------------------------')
-    print('Description:           Convert RF from time to depth using 1D model (coded for Prem)')
+    print('Description:           Convert RF from time to depth using 1D model')
     print('Inputs:                Filter band, 1D velocity model')
     print("Outputs:               Adds dictionary seis[0].conversions['<nameof1Dmodel>'] to each Pickle file\n")
-    print('Usage:                 >> python3 convert_to_depth_obspy.py filterband')
+    print('Usage:                 >> python3 convert_to_depth_obspy.py filterband 1Dmodel')
     print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
+    print('Options [2]:           prem, ak135 [str]')
     print('-----------------------------------------------------------------------------------------------------------------------')
     print('\n')
     sys.exit()
 
-PREM=True
-ak135=False
 rffilter=str(sys.argv[1])
+mod_1D=str(sys.argv[2])
 
-if PREM:
-    mod_1D='prem'
-    taupmodel = TauPyModel(model='../Tools/MODELS/PREM_FILES/prem_added_discon_taup.npz')
-elif ak135:
-    mod_1D='ak135'
+if mod_1D=='prem':
+    taupmodel = TauPyModel(model='../Tools/MODELS/ak135_FILES/prem_added_discon_taup.npz')
+
+elif mod_1D=='ak135':
     #obspy.taup.taup_create.build_taup_model('./ak135_added_discon_taup.tvel','./ak135_added_discon_taup.npz')
     taupmodel = TauPyModel(model='../Tools/MODELS/ak135_FILES/ak135_added_discon_taup.npz')
 
@@ -75,11 +73,11 @@ def compute_onestation(dr,filter='jgf1'):
             refslow=[]
 
             
-            if PREM:
+            if mod_1D=='prem':
                 # Get slownesses and incident angles based on PREM using Taup in Obspy
                 phases =  ['P','Pms','P220s','P310s','P400s','P550s','P670s','P971s','P1171s']
                 phdepths = [0,24.4,220,310,400,550,670,971,1171]
-            if ak135:
+            if mod_1D=='ak135':
                 # get slownesses and incident angles based on ak135 using Taup in Obspy
                 phases =  ['P','Pms','P210s','P410s','P660s','P1156s']
                 phdepths = [0,35,210,410,660,1156]
@@ -117,12 +115,12 @@ def compute_onestation(dr,filter='jgf1'):
 
 
 
-            if PREM:
+            if mod_1D=='prem':
                 # Interpolate latitude and longitudes  at the discontinuities
                 # Unfortunately obpsy taup cannot do this...yet. So this will be slow
                 discon=['P','P220s','P400s','P670s', 'P1171s']
                 x=[0,220.,400.,670., 1171.]
-            if ak135:
+            if mod_1D=='ak135':
                 discon=['P','P210s','P410s','P660s','P1156s']
                 x=[0,210.,410.,660.,1156.]
 
@@ -130,15 +128,17 @@ def compute_onestation(dr,filter='jgf1'):
             xlat=[slat]
             xlon=[slon]
             for d in range(1,len(discon)):
-                if PREM:
-                    taup_660=['taup_pierce -mod ../Tools/MODELS/PREM_FILES/prem_added_discon_taup.nd -h '+ str(depth) + ' -sta '+ str(slat)+' ' +str(slon)+ ' -evt '+ str(elat) + ' ' + str(elon) +' -ph '+discon[d] + ' -Pierce ' + str(x[d])+',0 -nodiscon']
-                if ak135:
-                    taup_660=['taup_pierce -mod ../Tools/MODELS/ak135_FILES/ak135_added_discon_taup.tvel -h '+ str(depth) + ' -sta '+ str(slat)+' ' +str(slon)+ ' -evt '+ str(elat) + ' ' + str(elon) +' -ph '+discon[d] + ' -Pierce ' + str(x[d])+',0 -nodiscon']
-                out=subprocess.check_output(taup_660,shell=True)
-                t=out.split()
-                xtime.append(float(t[-3])-float(t[-8]))
-                xlat.append(float(t[-7]))
-                xlon.append(float(t[-6]))
+                # Call taup_pierce to get piercepoints
+                arrivals = taupmodel.get_pierce_points_geo(depth,elat,elon,slat,slon,phase_list=([discon[d]]))
+
+                # Index from source side to find nearest pierce depth
+                pierce_list = arrivals[0].pierce[::-1]
+                # Find nearest depth
+                index = min(range(len(pierce_list)), key=lambda i: abs(float(pierce_list[i][3])-float(x[d])))
+
+                xtime.append(float(arrivals[0].time)-float(pierce_list[index][1]))
+                xlat.append(float(pierce_list[index][4]))
+                xlon.append(float(pierce_list[index][5]))
 
             traveltime_poly=np.polyfit(x,xtime,4)
             traveltime=np.poly1d(traveltime_poly)
@@ -152,6 +152,7 @@ def compute_onestation(dr,filter='jgf1'):
             depths=np.interp(RFtrace['time'],seis[0].conversions[str(mod_1D)]['time'],seis[0].conversions[str(mod_1D)]['depths'])
             latitudes=lats(depthspace)
             longitudes=lons(depthspace)
+            print(latitudes)
 
             seis[0].conversions[str(mod_1D)]['depthsfortime']=depths
             seis[0].conversions[str(mod_1D)]['latitudes']=latitudes
@@ -161,7 +162,7 @@ def compute_onestation(dr,filter='jgf1'):
 
             seis.write(stalist[i],format='PICKLE')
           else:
-            os.remove(stalist[i])               
+            os.remove(stalist[i])            
 
 stations=glob.glob('../Data/*')
 
