@@ -38,7 +38,7 @@ if len(sys.argv) != 2 or str(sys.argv[1]).lower() == 'help':
     print('                       RF file SNR ratios (V & R components)\n')
     print('Usage:                 >> python3 6_auto_select_receiver_functions.py filterband mindistance maxdistance')
     print('Options [1]:           jgf1, jgf2, jgf3, tff1, tff2, tff3, tff4 or tff5 [str]')
-    print('Options [2,3]:         epicentral distance [int])
+    print('Options [2,3]:         epicentral distance [int]')
     print('Recommended:           python3 6_auto_select_receiver_functions.py jgf1 30 90')
     print('-----------------------------------------------------------------------------------------------------------------------')
     print('\n')
