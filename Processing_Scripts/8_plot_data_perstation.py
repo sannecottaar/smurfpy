@@ -31,7 +31,7 @@ stadirs = glob.glob(direc+'/*')
 
 for stadir in stadirs:
     print(stadir)
-    with open(stadir+'/selected_RFs_jgf1.dat','r') as f:
+    with open(stadir+'/selected_RFs_'+str(filt)+'.dat','r') as f:
         goodrfs= f.read().replace('\n', '')
 
     # loop through events
